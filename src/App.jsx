@@ -1,14 +1,15 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
+import Ancient404 from './ui/ancient404'
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
 function App() {
-  const [count, setCount] = useState(0)
+
 
   return (
     <>
-      
+      <Router>
+        <Routes>
+          <Route path="/" element={<Ancient404 />} />
+        </Routes>
+      </Router>
     </>
   )
 }
