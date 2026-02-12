@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { axiosInstance } from '../service/axiosInstance';
+import { API_PATH } from '../service/api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -9,7 +11,13 @@ const Login = () => {
         e.preventDefault();
         console.log('Login attempt:', { email, password });
 
-        
+        try {
+            const response = await axiosInstance.post(API_PATH.AUTH.LOGIN, { email, password });
+            console.log('Login successful:', response.data);
+        } catch (error) {
+            console.error('Login failed:', error);
+            
+        }
         
     };
 
