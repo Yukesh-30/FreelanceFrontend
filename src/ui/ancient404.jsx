@@ -16,7 +16,7 @@ const Ancient404 = () => {
             </div>
 
             <div className="text-center max-w-2xl px-6">
-                <p className='text-2xl font-playfair font-thin tracking-wide text-gray-500'>The page you are looking for does not exist.</p>
+                <h4 className='text-2xl font-playfair font-thin tracking-wide text-gray-500'>The page you are looking for does not exist.</h4>
                 <Button link="/" text="Go Back" />
             </div>
         </div>

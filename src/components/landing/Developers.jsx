@@ -14,7 +14,7 @@ const Developers = () => {
                         <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white border-2 border-gray-200 mx-auto mb-6 flex items-center justify-center shadow-sm group-hover:border-black transition-colors duration-300">
                             <span className="text-2xl sm:text-3xl font-serif font-bold text-gray-300 group-hover:text-black">S</span>
                         </div>
-                        <h3 className="text-lg font-bold text-black">Shailesh</h3>
+                        <h3 className="text-lg font-bold text-black">Shailesh S</h3>
                         <p className="text-sm text-gray-500">Co-Creator</p>
                     </div>
 
@@ -22,7 +22,7 @@ const Developers = () => {
                         <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white border-2 border-gray-200 mx-auto mb-6 flex items-center justify-center shadow-sm group-hover:border-black transition-colors duration-300">
                             <span className="text-2xl sm:text-3xl font-serif font-bold text-gray-300 group-hover:text-black">Y</span>
                         </div>
-                        <h3 className="text-lg font-bold text-black">Yukesh</h3>
+                        <h3 className="text-lg font-bold text-black">Yukesh D</h3>
                         <p className="text-sm text-gray-500">Co-Creator</p>
                     </div>
                 </div>
