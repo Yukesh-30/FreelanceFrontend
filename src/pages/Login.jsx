@@ -41,7 +41,7 @@ const Login = () => {
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <Link to="/" className="flex justify-center mb-6">
                     <span className="text-4xl font-serif font-bold text-black tracking-tight">
-                        Freelance<span className="text-gray-400">.</span>
+                        SkillSphere<span className="text-gray-400">.</span>
                     </span>
                 </Link>
                 <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 font-serif">

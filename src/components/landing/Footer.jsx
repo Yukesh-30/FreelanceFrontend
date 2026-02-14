@@ -11,7 +11,7 @@ const Footer = () => {
                     {/* Brand */}
                     <div>
                         <Link to="/" className="text-2xl font-bold text-white tracking-tight mb-4 inline-block">
-                            Freelance<span className="text-gray-500">.</span>
+                            SkillSphere<span className="text-gray-500">.</span>
                         </Link>
                         <p className="text-gray-400 text-sm max-w-xs">
                             Secure, transparent, and professional freelancing for the modern era.
