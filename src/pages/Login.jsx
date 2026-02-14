@@ -16,9 +16,24 @@ const Login = () => {
             console.log('Login successful:', response.data);
         } catch (error) {
             console.error('Login failed:', error);
-            
+
         }
-        
+
+    };
+
+    const handleForgetPassword = async () => {
+        if (!email) {
+            alert("Please enter your email to reset password");
+            return;
+        }
+        try {
+            const response = await axiosInstance.post(API_PATH.AUTH.FORGET_PASSWORD, { email });
+            console.log('Forget password email sent:', response.data);
+            alert("Mail sent successfully");
+        } catch (error) {
+            console.error('Forget password failed:', error);
+            alert("Failed to send reset email. Please try again.");
+        }
     };
 
     return (
@@ -92,9 +107,13 @@ const Login = () => {
                             </div>
 
                             <div className="text-sm">
-                                <a href="#" className="font-medium text-gray-600 hover:text-black transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={handleForgetPassword}
+                                    className="font-medium text-gray-600 hover:text-black transition-colors bg-transparent border-none cursor-pointer"
+                                >
                                     Forgot password?
-                                </a>
+                                </button>
                             </div>
                         </div>
 
