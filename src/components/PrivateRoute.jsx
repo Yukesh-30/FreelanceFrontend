@@ -16,9 +16,9 @@ const PrivateRoute = ({ children, allowedRoles }) => {
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         // Redirect to unauthorized page or their respective dashboard
-        if (user.role === 'client') {
+        if (user.role === 'CLIENT') {
             return <Navigate to="/client/dashboard" replace />;
-        } else if (user.role === 'freelancer') {
+        } else if (user.role === 'FREELANCER') {
             return <Navigate to="/freelancer/dashboard" replace />;
         }
         return <Navigate to="/" replace />;

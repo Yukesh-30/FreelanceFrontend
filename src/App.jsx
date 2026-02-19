@@ -23,7 +23,7 @@ function App() {
           <Route
             path="/client/dashboard"
             element={
-              <PrivateRoute allowedRoles={['client']}>
+              <PrivateRoute allowedRoles={['CLIENT']}>
                 <ClientDashboard />
               </PrivateRoute>
             }
@@ -33,7 +33,7 @@ function App() {
           <Route
             path="/freelancer/dashboard"
             element={
-              <PrivateRoute allowedRoles={['freelancer']}>
+              <PrivateRoute allowedRoles={['FREELANCER']}>
                 <FreelancerDashboard />
               </PrivateRoute>
             }

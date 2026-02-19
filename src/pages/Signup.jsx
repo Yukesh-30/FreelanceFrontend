@@ -1,62 +1,44 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { axiosInstance } from '../service/axiosInstance.js';
 import { API_PATH } from '../service/api';
-import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    let [role, setRole] = useState('');
-
-    const { login } = useAuth();
-    const navigate = useNavigate();
+    const [role, setRole] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if(role==="Hire Talent"){
-            setRole('client')
-        }
-        else{
-            setRole('freelancer')
+        const finalRole = role === "Hire Talent" ? "CLIENT" : "FREELANCER";
 
-        }
-        console.log('Signup attempt:', { email, password, role: selectedRole });
+
+
         try {
-            const response = await axiosInstance.post(API_PATH.AUTH.REGISTER, { email, password, role: selectedRole });
-            console.log(response.data);
-
-            // Check if backend returns token on signup
-            if (response.data.token) {
-                const decodedUser = login(response.data.token);
-                if (decodedUser) {
-                    if (decodedUser.role === 'client') {
-                        navigate('/client/dashboard');
-                    } else if (decodedUser.role === 'freelancer') {
-                        navigate('/freelancer/dashboard');
-                    } else {
-                        navigate('/');
-                    }
+            const response = await axiosInstance.post(
+                API_PATH.AUTH.REGISTER,
+                {
+                    email,
+                    password,
+                    role: finalRole,
+                    fullName
                 }
-            } else {
-                // If no token, redirect to login
-                alert("Account created successfully! Please login.");
-                navigate('/login');
-            }
-
+            );
+            console.log(response.data);
         } catch (error) {
             console.log(error);
-            alert("Signup failed. Please try again.");
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <Link to="/" className="flex justify-center mb-6">
                     <span className="text-4xl font-serif font-bold text-black tracking-tight">
-                        SkillSphere<span className="text-gray-400">.</span>
+                        Freelance<span className="text-gray-400">.</span>
                     </span>
                 </Link>
                 <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 font-serif">
@@ -70,6 +52,24 @@ const Signup = () => {
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl shadow-gray-100 sm:rounded-2xl sm:px-10 border border-gray-100">
                     <form className="space-y-6" onSubmit={handleSubmit}>
+                        <div>
+                            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                                Full Name
+                            </label>
+                            <div className="mt-1">
+                                <input
+                                    id="fullName"
+                                    name="fullName"
+                                    type="text"
+                                    required
+                                    className="appearance-none block w-full px-3 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm transition-colors"
+                                    placeholder="Enter your full name"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                 Email address
