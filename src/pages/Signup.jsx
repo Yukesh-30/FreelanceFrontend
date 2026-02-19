@@ -1,27 +1,52 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../service/axiosInstance.js';
 import { API_PATH } from '../service/api';
+import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     let [role, setRole] = useState('client');
 
+    const { login } = useAuth();
+    const navigate = useNavigate();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if(role==="Hire Talent"){
-            role = "client"
+        let selectedRole = role;
+        if (role === "Hire Talent") {
+            selectedRole = "client"
         }
-        else{
-            role = "freelancer"
+        else {
+            selectedRole = "freelancer"
         }
-        console.log('Signup attempt:', { email, password, role });
-        try{
-            const response = await axiosInstance.post(API_PATH.AUTH.REGISTER, { email, password,role});
+        console.log('Signup attempt:', { email, password, role: selectedRole });
+        try {
+            const response = await axiosInstance.post(API_PATH.AUTH.REGISTER, { email, password, role: selectedRole });
             console.log(response.data);
-        }catch(error){
+
+            // Check if backend returns token on signup
+            if (response.data.token) {
+                const decodedUser = login(response.data.token);
+                if (decodedUser) {
+                    if (decodedUser.role === 'client') {
+                        navigate('/client/dashboard');
+                    } else if (decodedUser.role === 'freelancer') {
+                        navigate('/freelancer/dashboard');
+                    } else {
+                        navigate('/');
+                    }
+                }
+            } else {
+                // If no token, redirect to login
+                alert("Account created successfully! Please login.");
+                navigate('/login');
+            }
+
+        } catch (error) {
             console.log(error);
+            alert("Signup failed. Please try again.");
         }
     };
 

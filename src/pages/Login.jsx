@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../service/axiosInstance';
 import { API_PATH } from '../service/api';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -14,11 +18,24 @@ const Login = () => {
         try {
             const response = await axiosInstance.post(API_PATH.AUTH.LOGIN, { email, password });
             console.log('Login successful:', response.data);
+
+            const token = response.data.token; // Assuming API returns { token: "..." }
+            if (token) {
+                const decodedUser = login(token);
+                if (decodedUser) {
+                    if (decodedUser.role === 'client') {
+                        navigate('/client/dashboard');
+                    } else if (decodedUser.role === 'freelancer') {
+                        navigate('/freelancer/dashboard');
+                    } else {
+                        navigate('/');
+                    }
+                }
+            }
         } catch (error) {
             console.error('Login failed:', error);
-
+            alert("Login failed. Please checks your credentials.");
         }
-
     };
 
     const handleForgetPassword = async () => {
