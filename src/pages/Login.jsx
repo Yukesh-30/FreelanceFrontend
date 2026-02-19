@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../service/axiosInstance';
 import { API_PATH } from '../service/api';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -14,11 +18,39 @@ const Login = () => {
         try {
             const response = await axiosInstance.post(API_PATH.AUTH.LOGIN, { email, password });
             console.log('Login successful:', response.data);
+
+            const token = response.data.token; // Assuming API returns { token: "..." }
+            if (token) {
+                const decodedUser = login(token);
+                if (decodedUser) {
+                    if (decodedUser.role === 'client') {
+                        navigate('/client/dashboard');
+                    } else if (decodedUser.role === 'freelancer') {
+                        navigate('/freelancer/dashboard');
+                    } else {
+                        navigate('/');
+                    }
+                }
+            }
         } catch (error) {
             console.error('Login failed:', error);
-            
+            alert("Login failed. Please checks your credentials.");
         }
-        
+    };
+
+    const handleForgetPassword = async () => {
+        if (!email) {
+            alert("Please enter your email to reset password");
+            return;
+        }
+        try {
+            const response = await axiosInstance.post(API_PATH.AUTH.FORGET_PASSWORD, { email });
+            console.log('Forget password email sent:', response.data);
+            alert("Mail sent successfully");
+        } catch (error) {
+            console.error('Forget password failed:', error);
+            alert("Failed to send reset email. Please try again.");
+        }
     };
 
     return (
@@ -26,7 +58,7 @@ const Login = () => {
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <Link to="/" className="flex justify-center mb-6">
                     <span className="text-4xl font-serif font-bold text-black tracking-tight">
-                        Freelance<span className="text-gray-400">.</span>
+                        SkillSphere<span className="text-gray-400">.</span>
                     </span>
                 </Link>
                 <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 font-serif">
@@ -92,9 +124,13 @@ const Login = () => {
                             </div>
 
                             <div className="text-sm">
-                                <a href="#" className="font-medium text-gray-600 hover:text-black transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={handleForgetPassword}
+                                    className="font-medium text-gray-600 hover:text-black transition-colors bg-transparent border-none cursor-pointer"
+                                >
                                     Forgot password?
-                                </a>
+                                </button>
                             </div>
                         </div>
 

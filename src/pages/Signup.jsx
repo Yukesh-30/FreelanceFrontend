@@ -1,27 +1,53 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../service/axiosInstance.js';
 import { API_PATH } from '../service/api';
+import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     let [role, setRole] = useState('');
 
+    const { login } = useAuth();
+    const navigate = useNavigate();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if(role==="Hire Talent"){
             setRole('client')
         }
         else{
             setRole('freelancer')
+
         }
-        console.log('Signup attempt:', { email, password, role });
-        try{
-            const response = await axiosInstance.post(API_PATH.AUTH.REGISTER, { email, password,role});
+        console.log('Signup attempt:', { email, password, role: selectedRole });
+        try {
+            const response = await axiosInstance.post(API_PATH.AUTH.REGISTER, { email, password, role: selectedRole });
             console.log(response.data);
-        }catch(error){
+
+            // Check if backend returns token on signup
+            if (response.data.token) {
+                const decodedUser = login(response.data.token);
+                if (decodedUser) {
+                    if (decodedUser.role === 'client') {
+                        navigate('/client/dashboard');
+                    } else if (decodedUser.role === 'freelancer') {
+                        navigate('/freelancer/dashboard');
+                    } else {
+                        navigate('/');
+                    }
+                }
+            } else {
+                // If no token, redirect to login
+                alert("Account created successfully! Please login.");
+                navigate('/login');
+            }
+
+        } catch (error) {
             console.log(error);
+            alert("Signup failed. Please try again.");
         }
     };
 
@@ -30,7 +56,7 @@ const Signup = () => {
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <Link to="/" className="flex justify-center mb-6">
                     <span className="text-4xl font-serif font-bold text-black tracking-tight">
-                        Freelance<span className="text-gray-400">.</span>
+                        SkillSphere<span className="text-gray-400">.</span>
                     </span>
                 </Link>
                 <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 font-serif">
