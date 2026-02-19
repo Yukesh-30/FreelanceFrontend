@@ -7,19 +7,20 @@ import { useAuth } from '../context/AuthContext';
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    let [role, setRole] = useState('client');
+    let [role, setRole] = useState('');
 
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        let selectedRole = role;
-        if (role === "Hire Talent") {
-            selectedRole = "client"
+
+        if(role==="Hire Talent"){
+            setRole('client')
         }
-        else {
-            selectedRole = "freelancer"
+        else{
+            setRole('freelancer')
+
         }
         console.log('Signup attempt:', { email, password, role: selectedRole });
         try {
