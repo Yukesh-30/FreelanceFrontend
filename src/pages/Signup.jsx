@@ -6,15 +6,15 @@ import { API_PATH } from '../service/api';
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    let [role, setRole] = useState('client');
+    let [role, setRole] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if(role==="Hire Talent"){
-            role = "client"
+            setRole('client')
         }
         else{
-            role = "freelancer"
+            setRole('freelancer')
         }
         console.log('Signup attempt:', { email, password, role });
         try{
