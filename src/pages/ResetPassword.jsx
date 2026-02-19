@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../service/axiosInstance';
 import { API_PATH } from '../service/api';
+import axios from 'axios';
 
 const ResetPassword = () => {
     const [newPassword, setNewPassword] = useState('');
@@ -26,10 +27,13 @@ const ResetPassword = () => {
         }
 
         try {
-            const response = await axiosInstance.post(API_PATH.AUTH.RESET_PASSWORD, {
+            console.log(`${token} ${newPassword}`)
+
+            const response = await axios.post(API_PATH.AUTH.RESET_PASSWORD, {
                 token,
                 newPassword
             });
+            console.log(response.data);
             alert("Password reset successfully. Please login with your new password.");
             navigate('/login');
         } catch (error) {

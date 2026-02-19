@@ -22,10 +22,11 @@ const Login = () => {
             const token = response.data.token; // Assuming API returns { token: "..." }
             if (token) {
                 const decodedUser = login(token);
+                console.log('Decoded user:', decodedUser);
                 if (decodedUser) {
-                    if (decodedUser.role === 'client') {
+                    if (decodedUser.role === 'CLIENT') {
                         navigate('/client/dashboard');
-                    } else if (decodedUser.role === 'freelancer') {
+                    } else if (decodedUser.role === 'FREELANCER') {
                         navigate('/freelancer/dashboard');
                     } else {
                         navigate('/');
