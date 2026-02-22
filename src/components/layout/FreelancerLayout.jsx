@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { axiosInstance } from '../../service/axiosInstance';
+import { API_PATH } from '../../service/api';
 
 const SidebarIcon = ({ name, active }) => {
     switch (name) {
@@ -20,6 +22,24 @@ const SidebarIcon = ({ name, active }) => {
 const FreelancerLayout = ({ children }) => {
     const { logout, user } = useAuth();
     const location = useLocation();
+
+    const [userData, setUserData] = useState(null);
+
+    useEffect(() => {
+        if (!user?.id) return;
+        const fetchUser = async () => {
+            try {
+                const res = await axiosInstance.get(API_PATH.USERS.GET_USER(user.id));
+                const info = res.data?.informations || res.data?.infomations || res.data;
+                if (info) setUserData(info);
+            } catch (error) {
+                console.error("Failed to fetch user for layout:", error);
+            }
+        };
+        fetchUser();
+    }, [user?.id]);
+
+    const displayName = userData?.full_name || user?.email?.split('@')[0] || 'User';
 
     const navItems = [
         { name: 'Dashboard', path: '/freelancer/dashboard', icon: 'home' },
@@ -96,11 +116,11 @@ const FreelancerLayout = ({ children }) => {
                         <div className="w-px h-6 bg-gray-200 hidden sm:block"></div>
                         <Link to="/freelancer/profile" className="flex items-center gap-3 group">
                             <div className="text-right hidden sm:block">
-                                <p className="text-sm font-medium text-gray-900 group-hover:underline">{user?.email?.split('@')[0] || 'User'}</p>
+                                <p className="text-sm font-medium text-gray-900 group-hover:underline">{displayName}</p>
                                 <p className="text-xs text-gray-500 capitalize">{user?.role?.toLowerCase() || 'Freelancer'}</p>
                             </div>
-                            <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                                {user?.email ? user.email[0].toUpperCase() : 'U'}
+                            <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shadow-sm uppercase">
+                                {displayName[0] || 'U'}
                             </div>
                         </Link>
                     </div>
