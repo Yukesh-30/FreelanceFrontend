@@ -6,8 +6,10 @@ import ResetPassword from './pages/ResetPassword';
 import Ancient404 from './ui/ancient404';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
+import FreelancerLayout from './components/layout/FreelancerLayout';
 import ClientDashboard from './pages/client/Dashboard';
 import FreelancerDashboard from './pages/freelancer/Dashboard';
+import FreelancerProfile from './pages/freelancer/Profile'; // we will create this next
 
 function App() {
   return (
@@ -31,10 +33,15 @@ function App() {
 
           {/* Freelancer Routes */}
           <Route
-            path="/freelancer/dashboard"
+            path="/freelancer/*"
             element={
               <PrivateRoute allowedRoles={['FREELANCER']}>
-                <FreelancerDashboard />
+                <FreelancerLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<FreelancerDashboard />} />
+                    <Route path="profile" element={<FreelancerProfile />} />
+                  </Routes>
+                </FreelancerLayout>
               </PrivateRoute>
             }
           />
