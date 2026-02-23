@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
@@ -9,8 +10,13 @@ const Profile = () => {
 
     const [userData, setUserData] = useState(null);
     const [freelancerData, setFreelancerData] = useState(null);
+    const [gigs, setGigs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Delete Confirmation Modal State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [gigToDelete, setGigToDelete] = useState(null);
 
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState('');
@@ -26,14 +32,20 @@ const Profile = () => {
         const fetchProfileData = async () => {
             setLoading(true);
             try {
-                const [userRes, freelancerRes] = await Promise.all([
+                const [userRes, freelancerRes, gigsRes] = await Promise.all([
                     axiosInstance.get(API_PATH.USERS.GET_USER(userId)),
                     axiosInstance.get(API_PATH.FREELANCER.GET_DETAILS(userId)).catch(err => {
                         console.warn("Freelancer details not found, mocking default structure", err);
                         // Handled missing details gracefully if 404
                         return { data: { information: { bio: "", skills: [], hourly_rate: "0.00", total_earnings: "0.00", rating: "0.0", review_count: 0 } } };
+                    }),
+                    axiosInstance.get(API_PATH.GIGS.GET_ALL_BY_FREELANCER(userId)).catch(err => {
+                        console.warn("No gigs found or error fetching gigs", err);
+                        return { data: [] };
                     })
                 ]);
+
+
 
                 const userInfo = userRes.data?.informations || userRes.data?.infomations || userRes.data;
                 if (userInfo) {
@@ -46,6 +58,13 @@ const Profile = () => {
                     setBioText(info.bio || '');
                     setHourlyRate(info.hourly_rate || '0.00');
                     setSkillsArray(info.skills || []);
+                }
+
+                // Set gigs state based on the array returned
+                if (gigsRes.data?.gig) {
+                    setGigs([gigsRes.data.gig]);
+                } else if (gigsRes.data?.gigs) {
+                    setGigs(gigsRes.data.gigs);
                 }
 
             } catch (err) {
@@ -94,6 +113,33 @@ const Profile = () => {
             console.error("Failed to update skills", err);
             alert("Failed to update skills");
         }
+    };
+
+    const handleDeleteGigClick = (e, gigId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setGigToDelete(gigId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDeleteGig = async () => {
+        if (!gigToDelete) return;
+
+        try {
+            await axiosInstance.delete(API_PATH.GIGS.DELETE(gigToDelete));
+            setGigs(gigs.filter(g => g.id !== gigToDelete));
+        } catch (err) {
+            console.error("Failed to delete gig", err);
+            // Optionally could add a toast here instead of alert, but keeping simple
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setGigToDelete(null);
+        }
+    };
+
+    const cancelDeleteGig = () => {
+        setIsDeleteDialogOpen(false);
+        setGigToDelete(null);
     };
 
     if (loading) {
@@ -164,24 +210,7 @@ const Profile = () => {
                         </button>
                     </div>
 
-                    {/* My Portfolio Card (Mocked) */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                        <h3 className="font-bold text-gray-900 mb-4 font-serif">My portfolio</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gray-100 aspect-video rounded-lg overflow-hidden group relative cursor-pointer">
-                                <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=200&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="portfolio" />
-                            </div>
-                            <div className="bg-gray-100 aspect-video rounded-lg overflow-hidden group relative cursor-pointer">
-                                <img src="https://images.unsplash.com/photo-1627398225058-f4f408731eb1?q=80&w=200&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="portfolio" />
-                            </div>
-                            <div className="bg-gray-100 aspect-video rounded-lg overflow-hidden group relative cursor-pointer">
-                                <img src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="portfolio" />
-                            </div>
-                            <div className="bg-gray-100 aspect-video rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors cursor-pointer border border-dashed border-gray-300">
-                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                            </div>
-                        </div>
-                    </div>
+
 
                     {/* Meta Details Section (Bio, Skills, Language, etc.) */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 space-y-8">
@@ -349,48 +378,106 @@ const Profile = () => {
                         <h3 className="font-bold text-gray-900 mb-6 uppercase tracking-wide text-xs border-b border-gray-100 pb-2">Active Gigs</h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Existing Gig Card Mock */}
-                            <div className="group rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all cursor-pointer bg-white flex flex-col h-full">
-                                <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
-                                    <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="gig cover" />
-                                </div>
-                                <div className="p-4 flex flex-col flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <img src="https://i.pravatar.cc/150?u=profile1" alt="avatar" className="w-5 h-5 rounded-full" />
-                                        <span className="text-xs font-medium text-gray-600 truncate">{name}</span>
-                                        <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-auto">{calculatedLevel}</span>
-                                    </div>
-                                    <h4 className="font-semibold text-gray-900 text-sm mb-4 leading-tight group-hover:text-black transition-colors line-clamp-2">
-                                        I do professional video editing
-                                    </h4>
+                            {/* Dynamic Gig Cards */}
+                            {gigs.map((gig) => {
+                                // Find lowest price package
+                                let textLowestPrice = "N/A";
+                                if (gig.packages && gig.packages.length > 0) {
+                                    const lowestPricing = Math.min(...gig.packages.map(p => p.price));
+                                    textLowestPrice = `$${lowestPricing}`;
+                                }
 
-                                    <div className="mt-auto">
-                                        <div className="flex items-center gap-1 mb-2">
-                                            <span className="text-yellow-500 text-sm">★</span>
-                                            <span className="text-sm font-bold text-gray-900">{stats.rating || '5.0'}</span>
-                                            <span className="text-xs text-gray-500">({stats.review_count || 148})</span>
-                                        </div>
-                                        <div className="border-t border-gray-100 pt-2 flex justify-between items-center">
-                                            <span className="text-xs font-semibold text-gray-400">STARTING AT</span>
-                                            <span className="font-bold text-gray-900">${stats.hourly_rate ? parseInt(stats.hourly_rate) * 10 : 1500}</span>
-                                        </div>
+                                // Find the first image in media, fallback to default
+                                let coverImage = "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400&auto=format&fit=crop";
+                                if (gig.media && gig.media.length > 0) {
+                                    const imageMedia = gig.media.find(m => m.type === 'IMAGE');
+                                    if (imageMedia) {
+                                        coverImage = imageMedia.url;
+                                    }
+                                }
+
+                                return (
+                                    <div key={gig.id} className="group relative rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all bg-white flex flex-col h-full">
+
+                                        {/* Delete Button */}
+                                        <button
+                                            onClick={(e) => handleDeleteGigClick(e, gig.id)}
+                                            className="absolute top-2 right-2 z-10 bg-white/90 hover:bg-red-50 text-gray-400 hover:text-red-500 p-2 rounded-full transition-colors shadow-sm opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                                            title="Delete Gig"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
+
+                                        <Link to={`/freelancer/gigs/${gig.id}`} className="flex flex-col flex-1 cursor-pointer">
+                                            <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
+                                                <img src={coverImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt={gig.title} />
+                                            </div>
+                                            <div className="p-4 flex flex-col flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <img src="https://i.pravatar.cc/150?u=profile1" alt="avatar" className="w-5 h-5 rounded-full" />
+                                                    <span className="text-xs font-medium text-gray-600 truncate">{name}</span>
+                                                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-auto">{calculatedLevel}</span>
+                                                </div>
+                                                <h4 className="font-semibold text-gray-900 text-sm mb-4 leading-tight group-hover:text-black transition-colors line-clamp-2">
+                                                    {gig.title}
+                                                </h4>
+
+                                                <div className="mt-auto">
+                                                    <div className="flex items-center gap-1 mb-2">
+                                                        <span className="text-yellow-500 text-sm">★</span>
+                                                        <span className="text-sm font-bold text-gray-900">{stats.rating || '0.0'}</span> {/* Using dummy rating since gig details lack gig-specific rating yet */}
+                                                        <span className="text-xs text-gray-500">({stats.review_count || 0})</span>
+                                                    </div>
+                                                    <div className="border-t border-gray-100 pt-2 flex justify-between items-center">
+                                                        <span className="text-xs font-semibold text-gray-400">STARTING AT</span>
+                                                        <span className="font-bold text-gray-900">{textLowestPrice}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
                                     </div>
-                                </div>
-                            </div>
+                                );
+                            })}
 
                             {/* Create New Gig Card */}
-                            <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center justify-center p-6 h-full min-h-[300px] group">
+                            <Link to="/freelancer/gigs/create" className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center justify-center p-6 h-full min-h-[300px] group">
                                 <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                 </div>
                                 <h4 className="font-serif font-bold text-gray-900 text-lg">Create a new gig</h4>
-                            </div>
+                            </Link>
                         </div>
 
                     </div>
                 </div>
 
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 font-serif">Delete Gig</h3>
+                        <p className="text-gray-600 text-sm mb-6">
+                            Are you sure you want to delete this gig? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={cancelDeleteGig}
+                                className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteGig}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-black hover:bg-gray-800 cursor-pointer rounded-lg transition-colors shadow-sm"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

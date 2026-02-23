@@ -44,6 +44,7 @@ const FreelancerLayout = ({ children }) => {
     const navItems = [
         { name: 'Dashboard', path: '/freelancer/dashboard', icon: 'home' },
         { name: 'Profile', path: '/freelancer/profile', icon: 'profile' },
+        { name: 'Create Gig', path: '/freelancer/gigs/create', icon: 'settings' }, // Using settings icon temporarily
         { name: 'Settings', path: '/freelancer/settings', icon: 'settings' }, // Placeholder for future
     ];
 

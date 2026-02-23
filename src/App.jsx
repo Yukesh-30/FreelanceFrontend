@@ -10,6 +10,8 @@ import FreelancerLayout from './components/layout/FreelancerLayout';
 import ClientDashboard from './pages/client/Dashboard';
 import FreelancerDashboard from './pages/freelancer/Dashboard';
 import FreelancerProfile from './pages/freelancer/Profile'; // we will create this next
+import CreateGig from './pages/freelancer/CreateGig';
+import GigDetails from './pages/freelancer/GigDetails';
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<FreelancerDashboard />} />
                     <Route path="profile" element={<FreelancerProfile />} />
+                    <Route path="gigs/create" element={<CreateGig />} />
+                    <Route path="gigs/:id" element={<GigDetails />} />
                   </Routes>
                 </FreelancerLayout>
               </PrivateRoute>
