@@ -40,6 +40,7 @@ const FreelancerLayout = ({ children }) => {
     }, [user?.id]);
 
     const displayName = userData?.full_name || user?.email?.split('@')[0] || 'User';
+    const profilePicUrl = userData?.profileImageUrl || userData?.profileImage || userData?.profile_picture || userData?.profile_image || null;
 
     const navItems = [
         { name: 'Dashboard', path: '/freelancer/dashboard', icon: 'home' },
@@ -120,9 +121,13 @@ const FreelancerLayout = ({ children }) => {
                                 <p className="text-sm font-medium text-gray-900 group-hover:underline">{displayName}</p>
                                 <p className="text-xs text-gray-500 capitalize">{user?.role?.toLowerCase() || 'Freelancer'}</p>
                             </div>
-                            <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shadow-sm uppercase">
-                                {displayName[0] || 'U'}
-                            </div>
+                            {profilePicUrl ? (
+                                <img src={profilePicUrl} alt="Profile" className="h-9 w-9 rounded-full object-cover shadow-sm bg-gray-100 border border-gray-200" />
+                            ) : (
+                                <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shadow-sm uppercase">
+                                    {displayName[0] || 'U'}
+                                </div>
+                            )}
                         </Link>
                     </div>
                 </header>

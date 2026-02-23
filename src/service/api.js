@@ -8,7 +8,8 @@ const API_PATH = {
         RESET_PASSWORD: `${BASE_URL}/api/auth/reset-password`,
     },
     USERS: {
-        GET_USER: (id) => `${BASE_URL}/api/users/${id}`
+        GET_USER: (id) => `${BASE_URL}/api/users/${id}`,
+        UPLOAD_PROFILE_PIC: `${BASE_URL}/api/users/profile-picture`
     },
     FREELANCER: {
         GET_DETAILS: (id) => `${BASE_URL}/api/freelancer/details/${id}`,
@@ -20,7 +21,8 @@ const API_PATH = {
         GET_ALL_BY_FREELANCER: (id) => `${BASE_URL}/api/gigs/all-gigs/${id}`,
         GET_BY_ID: (id) => `${BASE_URL}/api/gigs/${id}`,
         DELETE: (id) => `${BASE_URL}/api/gigs/delete/${id}`,
-        UPDATE: (id) => `${BASE_URL}/api/gigs/update/${id}`
+        UPDATE: (id) => `${BASE_URL}/api/gigs/update/${id}`,
+        UPDATE_PACKAGE: (id) => `${BASE_URL}/api/gigs/package/${id}`
     }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { axiosInstance } from '../../service/axiosInstance';
@@ -13,6 +13,10 @@ const Profile = () => {
     const [gigs, setGigs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const fileInputRef = useRef(null);
+    const [profilePicUrl, setProfilePicUrl] = useState(null);
+    const [isUploadingPic, setIsUploadingPic] = useState(false);
 
     // Delete Confirmation Modal State
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -46,10 +50,12 @@ const Profile = () => {
                 ]);
 
 
-
+                console.log("User Response:", userRes);
                 const userInfo = userRes.data?.informations || userRes.data?.infomations || userRes.data;
                 if (userInfo) {
                     setUserData(userInfo);
+                    console.log("User Info:", userInfo.profile_url);
+                    setProfilePicUrl(userInfo.profile_url || userInfo.profileImage || userInfo.profile_picture || userInfo.profile_image || null);
                 }
 
                 if (freelancerRes.data?.information || freelancerRes.data) {
@@ -112,6 +118,34 @@ const Profile = () => {
         } catch (err) {
             console.error("Failed to update skills", err);
             alert("Failed to update skills");
+        }
+    };
+
+    const handleProfilePicChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsUploadingPic(true);
+            const objectUrl = URL.createObjectURL(file);
+            setProfilePicUrl(objectUrl); // Optimistic UI update
+
+            const formData = new FormData();
+            formData.append('profileImage', file);
+            formData.append('userId', userId);
+
+            await axiosInstance.put(API_PATH.USERS.UPLOAD_PROFILE_PIC, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            // You can show a success toast here if you want
+        } catch (err) {
+            console.error("Failed to upload profile picture", err);
+            alert("Failed to upload profile picture");
+            // Revert optimisitic update if needed (requires saving previous state)
+        } finally {
+            setIsUploadingPic(false);
         }
     };
 
@@ -187,10 +221,24 @@ const Profile = () => {
                             </span>
                         </div>
                         <div className="flex flex-col items-center mb-6">
-                            <div className="h-24 w-24 rounded-full bg-gray-200 mb-3 border-4 border-white shadow-md overflow-hidden relative group">
-                                <img src="https://i.pravatar.cc/150?u=profile1" alt="Profile" className="object-cover h-full w-full" />
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleProfilePicChange}
+                            />
+                            <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-gray-200 mb-4 border-4 border-white shadow-lg overflow-hidden relative group">
+                                <img src={profilePicUrl || "https://i.pravatar.cc/150?u=profile1"} alt="Profile" className="object-cover h-full w-full" />
+                                <div
+                                    onClick={() => !isUploadingPic && fileInputRef.current?.click()}
+                                    className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity cursor-pointer text-white ${isUploadingPic ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                >
+                                    {isUploadingPic ? (
+                                        <svg className="animate-spin w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    ) : (
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    )}
                                 </div>
                             </div>
                             <h2 className="text-xl font-bold font-serif text-gray-900">{name}</h2>

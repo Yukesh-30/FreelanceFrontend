@@ -40,8 +40,9 @@ const Dashboard = () => {
         fetchFreelancerDetails();
     }, []);
 
-
+    console.log("User Details:", userDetails);
     const fullName = userDetails?.informations?.full_name || userDetails?.infomations?.full_name || user?.email?.split('@')[0] || 'User';
+    const profilePicUrl = userDetails?.infomations?.profile_url || userDetails?.informations?.profileImageUrl || userDetails?.informations?.profileImage || userDetails?.informations?.profile_picture || userDetails?.informations?.profile_image || userDetails?.infomations?.profileImageUrl || "https://i.pravatar.cc/150?u=a042581f4e29026704d";
 
     useEffect(() => {
         if (freelancerDetails?.information) {
@@ -89,8 +90,8 @@ const Dashboard = () => {
                 {/* Stats Card */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-center">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="h-12 w-12 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm">
-                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Profile" className="h-full w-full object-cover" />
+                        <div className="h-16 w-16 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
+                            <img src={profilePicUrl} alt="Profile" className="h-full w-full object-cover" />
                         </div>
                         <div>
                             <h3 className="font-semibold text-gray-900">{fullName}</h3>

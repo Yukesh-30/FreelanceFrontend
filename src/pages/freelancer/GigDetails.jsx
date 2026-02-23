@@ -17,6 +17,15 @@ const GigDetails = () => {
         subcategory: ''
     });
 
+    const [editingPackageType, setEditingPackageType] = useState(null);
+    const [editPackageForm, setEditPackageForm] = useState({
+        package_type: '',
+        price: '',
+        description: '',
+        delivery_days: '',
+        revisions: ''
+    });
+
     useEffect(() => {
         const fetchGigDetails = async () => {
             setLoading(true);
@@ -55,6 +64,37 @@ const GigDetails = () => {
         } catch (err) {
             console.error("Failed to update gig:", err);
             alert("Failed to update gig");
+        }
+    };
+
+    const handleEditPackageClick = (pkg) => {
+        setEditingPackageType(pkg.type);
+        setEditPackageForm({
+            package_type: pkg.type || '',
+            price: pkg.price || '',
+            description: pkg.description || '',
+            delivery_days: pkg.delivery_days || '',
+            revisions: pkg.revisions || ''
+        });
+    };
+
+    const handleCancelPackageEdit = () => {
+        setEditingPackageType(null);
+    };
+
+    const handlePackageUpdate = async () => {
+        try {
+            await axiosInstance.patch(API_PATH.GIGS.UPDATE_PACKAGE(id), editPackageForm);
+
+            // Update local state
+            const updatedPackages = gig.packages.map(pkg =>
+                pkg.type === editingPackageType ? { ...pkg, ...editPackageForm } : pkg
+            );
+            setGig({ ...gig, packages: updatedPackages });
+            setEditingPackageType(null);
+        } catch (err) {
+            console.error("Failed to update package:", err);
+            alert("Failed to update package");
         }
     };
 
@@ -188,24 +228,69 @@ const GigDetails = () => {
                         {gig.packages && gig.packages.length > 0 ? (
                             <div className="space-y-4">
                                 {gig.packages.map((pkg) => (
-                                    <div key={pkg.id} className="border border-gray-200 rounded-xl p-5 hover:border-black transition-colors bg-gray-50">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <h4 className="font-bold text-gray-900 tracking-wide">{pkg.type}</h4>
-                                            <span className="text-xl font-bold text-gray-900">${pkg.price}</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mb-4 h-10 line-clamp-2">
-                                            {pkg.description}
-                                        </p>
-                                        <div className="flex flex-col gap-2 text-xs font-medium text-gray-500">
-                                            <div className="flex items-center gap-2">
-                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                {pkg.delivery_days} Days Delivery
+                                    <div key={pkg.id} className="border border-gray-200 rounded-xl p-5 hover:border-black transition-colors bg-gray-50 relative group/pkg">
+
+                                        {editingPackageType === pkg.type ? (
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <h4 className="font-bold text-gray-900 tracking-wide">{pkg.type}</h4>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={handleCancelPackageEdit} className="text-xs font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
+                                                        <button onClick={handlePackageUpdate} className="text-xs bg-black text-white px-2 py-1 rounded font-semibold hover:bg-gray-800">Save</button>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Price ($)</label>
+                                                    <input type="number" value={editPackageForm.price} onChange={e => setEditPackageForm({ ...editPackageForm, price: e.target.value })} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-black outline-none" />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Description</label>
+                                                    <textarea value={editPackageForm.description} onChange={e => setEditPackageForm({ ...editPackageForm, description: e.target.value })} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-black outline-none min-h-[80px]" />
+                                                </div>
+
+                                                <div className="flex gap-3">
+                                                    <div className="flex-1">
+                                                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Delivery Days</label>
+                                                        <input type="number" value={editPackageForm.delivery_days} onChange={e => setEditPackageForm({ ...editPackageForm, delivery_days: e.target.value })} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-black outline-none" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Revisions</label>
+                                                        <input type="number" value={editPackageForm.revisions} onChange={e => setEditPackageForm({ ...editPackageForm, revisions: e.target.value })} className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-black outline-none" />
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                                {pkg.revisions} Revisions
-                                            </div>
-                                        </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <h4 className="font-bold text-gray-900 tracking-wide">{pkg.type}</h4>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleEditPackageClick(pkg)}
+                                                            className="text-gray-400 hover:text-black p-1 rounded-full transition-colors opacity-0 group-hover/pkg:opacity-100"
+                                                            title="Edit Package"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                        </button>
+                                                        <span className="text-xl font-bold text-gray-900">${pkg.price}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-gray-600 mb-4 h-10 line-clamp-2">
+                                                    {pkg.description}
+                                                </p>
+                                                <div className="flex flex-col gap-2 text-xs font-medium text-gray-500">
+                                                    <div className="flex items-center gap-2">
+                                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        {pkg.delivery_days} Days Delivery
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                        {pkg.revisions} Revisions
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>
