@@ -22,7 +22,9 @@ const API_PATH = {
         GET_BY_ID: (id) => `${BASE_URL}/api/gigs/${id}`,
         DELETE: (id) => `${BASE_URL}/api/gigs/delete/${id}`,
         UPDATE: (id) => `${BASE_URL}/api/gigs/update/${id}`,
-        UPDATE_PACKAGE: (id) => `${BASE_URL}/api/gigs/package/${id}`
+        UPDATE_PACKAGE: (id) => `${BASE_URL}/api/gigs/package/${id}`,
+        POST_MEDIA: (id) => `${BASE_URL}/api/gigs/${id}/media`,
+        DELETE_MEDIA: `${BASE_URL}/api/gigs/media`
     }
 }
 

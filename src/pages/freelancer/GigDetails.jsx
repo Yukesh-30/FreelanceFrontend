@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
@@ -8,6 +8,9 @@ const GigDetails = () => {
     const [gig, setGig] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isMediaLoading, setIsMediaLoading] = useState(false);
+    const [mediaToDelete, setMediaToDelete] = useState(null);
+    const fileInputRef = useRef(null);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({
@@ -98,6 +101,70 @@ const GigDetails = () => {
         }
     };
 
+    const handleMediaUpload = async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        setIsMediaLoading(true);
+        try {
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('media', file);
+            });
+
+            const response = await axiosInstance.post(API_PATH.GIGS.POST_MEDIA(id), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            if (response.data?.media) {
+                const formattedMedia = response.data.media.map(m => ({
+                    id: m.id,
+                    url: m.media_url,
+                    type: m.media_type
+                }));
+
+                setGig(prevGig => ({
+                    ...prevGig,
+                    media: [...(prevGig.media || []), ...formattedMedia]
+                }));
+            }
+        } catch (err) {
+            console.error("Failed to upload media:", err);
+            alert("Failed to upload media");
+        } finally {
+            setIsMediaLoading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    const handleDeleteClick = (mediaId) => {
+        setMediaToDelete(mediaId);
+    };
+
+    const confirmDeleteMedia = async () => {
+        if (!mediaToDelete) return;
+
+        setIsMediaLoading(true);
+        try {
+            await axiosInstance.delete(API_PATH.GIGS.DELETE_MEDIA, {
+                data: { id: mediaToDelete }
+            });
+
+            setGig(prevGig => ({
+                ...prevGig,
+                media: prevGig.media.filter(m => m.id !== mediaToDelete)
+            }));
+            setMediaToDelete(null);
+        } catch (err) {
+            console.error("Failed to delete media:", err);
+            alert("Failed to delete media");
+        } finally {
+            setIsMediaLoading(false);
+        }
+    };
+
     if (loading) {
         return <div className="p-8 text-center text-gray-500">Loading gig details...</div>;
     }
@@ -184,25 +251,75 @@ const GigDetails = () => {
                     {/* Left Column: Media & Description */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* Media Gallery */}
-                        {gig.media && gig.media.length > 0 && (
+                        {(gig.media && gig.media.length > 0) || isEditing ? (
                             <div className="space-y-4">
                                 <h3 className="font-bold text-gray-900 font-serif text-xl border-b border-gray-100 pb-2">Portfolio</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {gig.media.map((item) => (
+                                    {gig.media && gig.media.map((item) => (
                                         <div key={item.id} className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative group">
                                             {item.type === 'IMAGE' ? (
                                                 <img src={item.url} alt="Gig media" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             ) : (
                                                 <video src={item.url} controls className="w-full h-full object-cover" />
                                             )}
-                                            <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded">
-                                                {item.type}
-                                            </div>
+
+                                            {isEditing ? (
+                                                <div
+                                                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <button
+                                                        onClick={() => handleDeleteClick(item.id)}
+                                                        className="bg-white/90 hover:bg-red-50 text-red-500 p-2.5 rounded-full shadow-lg transition-all hover:scale-110"
+                                                        title="Delete Media"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded">
+                                                    {item.type}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
+
+                                    {/* Upload New File Placeholder */}
+                                    {isEditing && (
+                                        <div
+                                            onClick={() => !isMediaLoading && fileInputRef.current?.click()}
+                                            className={`aspect-video rounded-lg bg-gray-50 border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:bg-gray-100 transition-colors ${isMediaLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {isMediaLoading ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <svg className="animate-spin h-6 w-6 text-black" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                    </svg>
+                                                    <span className="text-sm font-medium">Processing...</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <span className="text-3xl mb-1">+</span>
+                                                    <span className="text-sm font-semibold">Add Media</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Hidden File Input */}
+                                {isEditing && (
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        multiple
+                                        accept="image/*,video/*"
+                                        onChange={handleMediaUpload}
+                                    />
+                                )}
                             </div>
-                        )}
+                        ) : null}
 
                         {/* Description */}
                         <div>
@@ -301,6 +418,42 @@ const GigDetails = () => {
 
                 </div>
             </div>
+            {/* Delete Confirmation Modal */}
+            {mediaToDelete && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="bg-red-100 text-red-500 p-3 rounded-full mb-4">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Media?</h3>
+                            <p className="text-sm text-gray-500 mb-6">Are you sure you want to remove this media file? This action cannot be undone.</p>
+
+                            <div className="flex gap-3 w-full">
+                                <button
+                                    onClick={() => setMediaToDelete(null)}
+                                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 rounded-xl transition-colors"
+                                    disabled={isMediaLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteMedia}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition-colors flex justify-center items-center"
+                                    disabled={isMediaLoading}
+                                >
+                                    {isMediaLoading ? (
+                                        <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                    ) : "Delete"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

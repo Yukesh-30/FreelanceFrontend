@@ -37,24 +37,26 @@ export default function PublishStep({ gigData, prevStep }) {
                 }))
             ));
 
-            formData.append('media', JSON.stringify(
-                gigData.media.map(m => ({
-                    url: m.url,
-                    type: m.type
-                }))
-            ));
+            formData.append('media', JSON.stringify([]));
 
-            // Extract the cover image (first uploaded image with a file reference)
             const coverMedia = gigData.media.find(m => m.type === 'IMAGE' && m.file);
             if (coverMedia && coverMedia.file) {
                 formData.append('cover_pic', coverMedia.file);
             }
 
-            // Send as multipart/form-data
+            // Append all media files (including cover pic, if you want it in the portfolio gallery)
+            gigData.media.forEach(m => {
+                if (m.file) {
+                    formData.append('media_files', m.file);
+                }
+            });
+
+            // Send as multipart/form-data with an extended timeout for media processing
             await axiosInstance.post(API_PATH.GIGS.CREATE, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
-                }
+                },
+                timeout: 60000 // 60 seconds
             });
 
             setSuccess(true);

@@ -435,13 +435,17 @@ const Profile = () => {
                                     textLowestPrice = `$${lowestPricing}`;
                                 }
 
-                                // Find the first image in media, fallback to default
-                                let coverImage = "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400&auto=format&fit=crop";
-                                if (gig.media && gig.media.length > 0) {
+                                // Find the cover image: try cover_pic_url first, then fallback to first media IMAGE, then default
+                                let coverImage = gig.cover_pic_url;
+                                console.log("coverImage", gig.cover_pic_url);
+                                if (!coverImage && gig.media && gig.media.length > 0) {
                                     const imageMedia = gig.media.find(m => m.type === 'IMAGE');
                                     if (imageMedia) {
                                         coverImage = imageMedia.url;
                                     }
+                                }
+                                if (!coverImage) {
+                                    coverImage = "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400&auto=format&fit=crop";
                                 }
 
                                 return (
