@@ -16,28 +16,47 @@ export default function PublishStep({ gigData, prevStep }) {
         setError('');
 
         try {
-            // Removing the File object before sending, keeping only url and type which the API expects
-            const payload = {
-                freelancer_id: user?.id,
-                title: gigData.title,
-                description: gigData.description,
-                category: gigData.category,
-                tags: gigData.tags,
-                subcategory: gigData.subcategory,
-                packages: gigData.packages.map(p => ({
+            const formData = new FormData();
+
+            // Append basic fields
+            if (user?.id) formData.append('freelancer_id', user.id);
+            formData.append('title', gigData.title);
+            formData.append('description', gigData.description);
+            formData.append('category', gigData.category);
+            formData.append('subcategory', gigData.subcategory);
+
+            // Append arrays/objects as stringified JSON (as expected by your backend)
+            formData.append('tags', JSON.stringify(gigData.tags || []));
+            formData.append('packages', JSON.stringify(
+                gigData.packages.map(p => ({
                     type: p.type,
                     price: Number(p.price) || 0,
                     description: p.description,
                     delivery_days: Number(p.delivery_days) || 0,
                     revisions: Number(p.revisions) || 0
-                })),
-                media: gigData.media.map(m => ({
+                }))
+            ));
+
+            formData.append('media', JSON.stringify(
+                gigData.media.map(m => ({
                     url: m.url,
                     type: m.type
                 }))
-            };
+            ));
 
-            await axiosInstance.post(API_PATH.GIGS.CREATE, payload);
+            // Extract the cover image (first uploaded image with a file reference)
+            const coverMedia = gigData.media.find(m => m.type === 'IMAGE' && m.file);
+            if (coverMedia && coverMedia.file) {
+                formData.append('cover_pic', coverMedia.file);
+            }
+
+            // Send as multipart/form-data
+            await axiosInstance.post(API_PATH.GIGS.CREATE, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
             setSuccess(true);
         } catch (err) {
             console.error("Error creating gig:", err);
