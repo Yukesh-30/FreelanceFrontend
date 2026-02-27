@@ -25,6 +25,17 @@ const API_PATH = {
         UPDATE_PACKAGE: (id) => `${BASE_URL}/api/gigs/package/${id}`,
         POST_MEDIA: (id) => `${BASE_URL}/api/gigs/${id}/media`,
         DELETE_MEDIA: `${BASE_URL}/api/gigs/media`
+    },
+    JOBS: {
+        CREATE: `${BASE_URL}/api/jobs/`,
+        GET_MY_JOBS: `${BASE_URL}/api/jobs/me`,
+        GET_BY_ID: (id) => `${BASE_URL}/api/jobs/${id}`,
+        UPDATE: (id) => `${BASE_URL}/api/jobs/${id}`,
+        DELETE: (id) => `${BASE_URL}/api/jobs/${id}`,
+    },
+    CLIENT: {
+        GET_MY_PROFILE: `${BASE_URL}/api/client/client-profile/me`,
+        UPDATE_MY_PROFILE: `${BASE_URL}/api/client/client-profile/me`,
     }
 }
 
