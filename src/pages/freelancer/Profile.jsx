@@ -428,14 +428,11 @@ const Profile = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {/* Dynamic Gig Cards */}
                             {gigs.map((gig) => {
-                                // Find lowest price package
                                 let textLowestPrice = "N/A";
                                 if (gig.packages && gig.packages.length > 0) {
                                     const lowestPricing = Math.min(...gig.packages.map(p => p.price));
                                     textLowestPrice = `$${lowestPricing}`;
                                 }
-
-                                // Find the cover image: try cover_pic_url first, then fallback to first media IMAGE, then default
                                 let coverImage = gig.cover_pic_url;
                                 console.log("coverImage", gig.cover_pic_url);
                                 if (!coverImage && gig.media && gig.media.length > 0) {
