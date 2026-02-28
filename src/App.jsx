@@ -16,6 +16,8 @@ import FreelancerDashboard from './pages/freelancer/Dashboard';
 import FreelancerProfile from './pages/freelancer/Profile';
 import CreateGig from './pages/freelancer/CreateGig';
 import GigDetails from './pages/freelancer/GigDetails';
+import SearchProject from './pages/freelancer/SearchProject';
+import JobDetails from './pages/freelancer/JobDetails';
 
 function App() {
   return (
@@ -55,6 +57,8 @@ function App() {
                     <Route path="profile" element={<FreelancerProfile />} />
                     <Route path="gigs/create" element={<CreateGig />} />
                     <Route path="gigs/:id" element={<GigDetails />} />
+                    <Route path="search-project" element={<SearchProject />} />
+                    <Route path="jobs/:id" element={<JobDetails />} />
                   </Routes>
                 </FreelancerLayout>
               </PrivateRoute>

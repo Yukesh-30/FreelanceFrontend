@@ -11,6 +11,7 @@ const Profile = () => {
     const [userData, setUserData] = useState(null);
     const [freelancerData, setFreelancerData] = useState(null);
     const [gigs, setGigs] = useState([]);
+    const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -36,7 +37,7 @@ const Profile = () => {
         const fetchProfileData = async () => {
             setLoading(true);
             try {
-                const [userRes, freelancerRes, gigsRes] = await Promise.all([
+                const [userRes, freelancerRes, gigsRes, jobsRes] = await Promise.all([
                     axiosInstance.get(API_PATH.USERS.GET_USER(userId)),
                     axiosInstance.get(API_PATH.FREELANCER.GET_DETAILS(userId)).catch(err => {
                         console.warn("Freelancer details not found, mocking default structure", err);
@@ -46,6 +47,10 @@ const Profile = () => {
                     axiosInstance.get(API_PATH.GIGS.GET_ALL_BY_FREELANCER(userId)).catch(err => {
                         console.warn("No gigs found or error fetching gigs", err);
                         return { data: [] };
+                    }),
+                    axiosInstance.get(API_PATH.JOBS.GET_ALL_JOBS).catch(err => {
+                        console.warn("No recommended jobs found or error", err);
+                        return { data: { jobs: [] } };
                     })
                 ]);
 
@@ -72,6 +77,15 @@ const Profile = () => {
                 } else if (gigsRes.data?.gigs) {
                     setGigs(gigsRes.data.gigs);
                 }
+
+                let allJobs = [];
+                if (jobsRes.data?.jobs) {
+                    allJobs = jobsRes.data.jobs;
+                } else if (Array.isArray(jobsRes.data)) {
+                    allJobs = jobsRes.data;
+                }
+                const shuffled = [...allJobs].sort(() => 0.5 - Math.random());
+                setRecommendedJobs(shuffled.slice(0, 3));
 
             } catch (err) {
                 console.error("Error fetching profile data", err);
@@ -378,44 +392,6 @@ const Profile = () => {
                             )}
                         </div>
 
-                        {/* Mocked sections below based on screenshot */}
-                        <div className="border-t border-gray-100 pt-6">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="font-bold text-gray-900 font-serif">Language</h3>
-                                <button className="text-black bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-xs font-semibold transition-colors">
-                                    Add New
-                                </button>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-sm text-gray-900 font-medium">English - <span className="text-gray-500 font-normal">Conversational</span></p>
-                                <p className="text-sm text-gray-900 font-medium">Tamil - <span className="text-gray-500 font-normal">Native</span></p>
-                            </div>
-                        </div>
-
-                        <div className="border-t border-gray-100 pt-6">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="font-bold text-gray-900 font-serif">Education</h3>
-                                <button className="text-black bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-xs font-semibold transition-colors">
-                                    Add New
-                                </button>
-                            </div>
-                            <p className="text-sm text-gray-500">Add education details</p>
-                        </div>
-
-                        <div className="border-t border-gray-100 pt-6">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="font-bold text-gray-900 font-serif">Certification</h3>
-                                <button className="text-black bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-xs font-semibold transition-colors">
-                                    Add New
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 mt-4">
-                                <div className="bg-gray-50 aspect-video rounded-lg border border-gray-200"></div>
-                                <div className="bg-gray-50 aspect-video rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer border border-dashed border-gray-300">
-                                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                </div>
-                            </div>
-                        </div>
 
                     </div>
                 </div>
@@ -501,6 +477,33 @@ const Profile = () => {
                 </div>
 
             </div>
+
+            {/* Recommended Projects Section */}
+            {recommendedJobs.length > 0 && (
+                <div className="mt-12">
+                    <h2 className="text-xl font-bold font-serif text-gray-900 mb-6 text-center">Recommended Projects</h2>
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        {recommendedJobs.map((job) => (
+                            <div key={job.id} className="bg-white border text-sm border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500 uppercase flex-shrink-0 border border-gray-300">
+                                        {job.companyName?.charAt(0) || 'C'}
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-0.5">{job.companyName || 'Unknown Company'}</p>
+                                        <h3 className="font-semibold text-gray-900 line-clamp-1">{job.title || job.description}</h3>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 sm:ml-4 flex-shrink-0 mt-3 sm:mt-0">
+                                    <Link to={`/freelancer/jobs/${job.id}`} className="bg-black hover:bg-gray-800 text-white px-5 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto text-center block">
+                                        Open
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Modal */}
             {isDeleteDialogOpen && (

@@ -29,11 +29,13 @@ const API_PATH = {
     JOBS: {
         CREATE: `${BASE_URL}/api/jobs/`,
         GET_MY_JOBS: `${BASE_URL}/api/jobs/me`,
+        GET_ALL_JOBS: `${BASE_URL}/api/jobs/all-jobs`,
         GET_BY_ID: (id) => `${BASE_URL}/api/jobs/${id}`,
         UPDATE: (id) => `${BASE_URL}/api/jobs/${id}`,
         DELETE: (id) => `${BASE_URL}/api/jobs/${id}`,
     },
     CLIENT: {
+        GET_PROFILE: (id) => `${BASE_URL}/api/client/client-profile/${id}`,
         GET_MY_PROFILE: `${BASE_URL}/api/client/client-profile/me`,
         UPDATE_MY_PROFILE: `${BASE_URL}/api/client/client-profile/me`,
     }
