@@ -12,10 +12,9 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const finalRole = role === "Hire Talent" ? "CLIENT" : "FREELANCER";
-
-
-
+        const finalRole = role === "CLIENT" ? "CLIENT" : "FREELANCER";
+        
+        console.log(finalRole); 
         try {
             const response = await axiosInstance.post(
                 API_PATH.AUTH.REGISTER,
@@ -26,7 +25,7 @@ const Signup = () => {
                     fullName
                 }
             );
-            console.log(response.data);
+        
         } catch (error) {
             console.log(error);
         }
@@ -120,8 +119,8 @@ const Signup = () => {
                                     value={role}
                                     onChange={(e) => setRole(e.target.value)}
                                 >
-                                    <option value="client">Hire Talent</option>
-                                    <option value="freelancer">Find Work</option>
+                                    <option value="CLIENT">Hire Talent</option>
+                                    <option value="FREELANCER">Find Work</option>
                                 </select>
                             </div>
                         </div>
