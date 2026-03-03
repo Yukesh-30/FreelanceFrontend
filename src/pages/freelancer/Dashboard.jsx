@@ -6,6 +6,7 @@ const Dashboard = () => {
     const { user } = useAuth();
     const [userDetails, setUserDetails] = useState(null);
     const [freelancerDetails, setFreelancerDetails] = useState(null);
+    const [contracts, setContracts] = useState([]);
     const [level, setLevel] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -36,9 +37,70 @@ const Dashboard = () => {
             }
         };
 
+        const fetchContracts = async () => {
+            try {
+                const response = await axiosInstance.get(API_PATH.CONTRACT.GET_MY_CONTRACTS(user.id));
+                setContracts(response.data.contracts || []);
+            } catch (error) {
+                console.error("Failed to fetch contracts:", error);
+            }
+        };
+
         fetchUser();
         fetchFreelancerDetails();
-    }, []);
+        fetchContracts();
+    }, [user?.id]);
+
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+
+    const calendarDays = [];
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        calendarDays.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+        calendarDays.push(i);
+    }
+    const totalSlots = Math.ceil(calendarDays.length / 7) * 7;
+    for (let i = calendarDays.length; i < totalSlots; i++) {
+        calendarDays.push(null);
+    }
+
+    const getEventsForDay = (day) => {
+        if (!day) return [];
+        const checkDate = new Date(currentYear, currentMonth, day);
+        checkDate.setHours(0, 0, 0, 0);
+
+        const events = [];
+        const seenStarts = new Set();
+        const seenEnds = new Set();
+
+        contracts.forEach(c => {
+            const title = c.job_title || c.gig_title || 'Project';
+            if (c.start_date) {
+                const start = new Date(c.start_date);
+                start.setHours(0, 0, 0, 0);
+                if (checkDate.getTime() === start.getTime() && !seenStarts.has(title)) {
+                    seenStarts.add(title);
+                    events.push({ ...c, type: 'START' });
+                }
+            }
+            if (c.end_date) {
+                const end = new Date(c.end_date);
+                end.setHours(0, 0, 0, 0);
+                if (checkDate.getTime() === end.getTime() && !seenEnds.has(title)) {
+                    seenEnds.add(title);
+                    events.push({ ...c, type: 'END' });
+                }
+            }
+        });
+
+        return events;
+    };
 
     console.log("User Details:", userDetails);
     const fullName = userDetails?.informations?.full_name || userDetails?.infomations?.full_name || user?.email?.split('@')[0] || 'User';
@@ -62,17 +124,6 @@ const Dashboard = () => {
     }, [freelancerDetails]);
 
     if (loading && !userDetails) return <p>Loading profile...</p>;
-    const classes = [
-        { id: 1, name: 'class_class_1', progress: 10 },
-        { id: 2, name: 'class_class_2', progress: 75 },
-        { id: 3, name: 'class_class_3', progress: 100 },
-    ];
-
-    const recommendedProjects = [
-        { id: 1, client: 'client_client_1', title: 'Video editor for a 30 second instagram reel...' },
-        { id: 2, client: 'client_client_2', title: 'Video editor for a 5-10 minute youtube video...' },
-        { id: 3, client: 'client_client_3', title: 'Thumbnail design for a youtube video...' },
-    ];
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -86,69 +137,57 @@ const Dashboard = () => {
             </div>
 
             {/* Quick Stats & Progress Tracker */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Stats Card */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-center">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="h-16 w-16 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
-                            <img src={profilePicUrl} alt="Profile" className="h-full w-full object-cover" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-900">{fullName}</h3>
-                            <p className="text-sm text-gray-500 capitalize">{user?.role?.toLowerCase() || 'Freelancer'}</p>
-                        </div>
+            <div className="flex justify-end gap-3 mb-2">
+                <button onClick={() => window.location.href = '/freelancer/current-projects'} className="bg-white text-black text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors shadow-sm border border-gray-200 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    Current Jobs
+                </button>
+                <button onClick={() => window.location.href = '/freelancer/applications'} className="bg-black text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors shadow-sm flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    My Applications
+                </button>
+            </div>
+            {/* Quick Stats */}
+            <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                    <div className="h-20 w-20 rounded-full bg-gray-200 overflow-hidden border-4 border-white shadow-md flex-shrink-0">
+                        <img src={profilePicUrl} alt="Profile" className="h-full w-full object-cover" />
                     </div>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500 font-medium">Level:</span>
-                            <span className="font-semibold text-gray-900">{level || 'Beginner'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500 font-medium">Rating:</span>
-                            <div className="flex text-yellow-500">
-                                <span className="text-gray-900 ml-1 font-semibold text-xs pt-0.5">{freelancerDetails?.information?.rating}</span>
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500 font-medium">Reviews:</span>
-                            <span className="font-semibold text-gray-900">{freelancerDetails?.information?.review_count}</span>
-                        </div>
+                    <div>
+                        <h3 className="text-xl font-bold font-serif text-gray-900">{fullName}</h3>
+                        <p className="text-sm text-gray-500 capitalize font-medium mt-1">{user?.role?.toLowerCase() || 'Freelancer'}</p>
                     </div>
                 </div>
-
-                {/* Progress Tracker Card */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 lg:col-span-2">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="font-serif font-bold text-lg text-gray-900">Progress Tracker</h2>
-                        <button className="text-xs font-semibold text-black bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors">
-                            View All Progress
-                        </button>
+                <div className="flex flex-wrap items-center gap-6 sm:gap-12 w-full md:w-auto justify-around sm:justify-end">
+                    <div className="text-center">
+                        <div className="text-sm text-gray-500 font-medium mb-1">Level</div>
+                        <div className="font-bold text-gray-900 text-lg">{level || 'Beginner'}</div>
                     </div>
-                    <div className="space-y-6">
-                        {classes.map((cls) => (
-                            <div key={cls.id} className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center text-gray-700 font-medium">
-                                        <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        {cls.name}
-                                    </div>
-                                    <span className="font-bold text-gray-900">{cls.progress}%</span>
-                                </div>
-                                <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                                    <div
-                                        className="bg-black h-1.5 rounded-full"
-                                        style={{ width: `${cls.progress}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="hidden sm:block w-px h-10 bg-gray-200"></div>
+                    <div className="text-center">
+                        <div className="text-sm text-gray-500 font-medium mb-1">Rating</div>
+                        <div className="font-bold text-gray-900 text-lg flex items-center justify-center gap-1">
+                            <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                            {freelancerDetails?.information?.rating || 'New'}
+                        </div>
+                    </div>
+                    <div className="hidden sm:block w-px h-10 bg-gray-200"></div>
+                    <div className="text-center">
+                        <div className="text-sm text-gray-500 font-medium mb-1">Reviews</div>
+                        <div className="font-bold text-gray-900 text-lg">{freelancerDetails?.information?.review_count || 0}</div>
                     </div>
                 </div>
             </div>
 
-            {/* Calendar (Mocked completely static layout to match screenshot roughly) */}
+
+
+            {/* Calendar with Data */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 overflow-hidden">
-                <h2 className="text-center font-serif font-bold text-lg text-gray-900 mb-6">Calendar</h2>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="font-serif font-bold text-lg text-gray-900">
+                        {currentDate.toLocaleString('default', { month: 'long' })} {currentYear}
+                    </h2>
+                </div>
                 <div className="w-full overflow-x-auto">
                     <div className="min-w-[800px]">
                         <div className="grid grid-cols-7 border-b border-gray-200">
@@ -156,59 +195,43 @@ const Dashboard = () => {
                                 <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{day}</div>
                             ))}
                         </div>
-                        {/* Mocking a few rows */}
-                        <div className="grid grid-cols-7 border-b border-gray-100 min-h-[80px]">
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">1</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 bg-gray-50 relative">
-                                2
-                                <div className="absolute top-8 left-1 right-1 bg-black text-white text-[10px] px-1 py-0.5 rounded truncate">class_class_1</div>
-                            </div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 bg-gray-50 relative">
-                                3
-                                <div className="absolute top-8 left-1 right-1 bg-black text-white text-[10px] px-1 py-0.5 rounded truncate">class_class_1</div>
-                            </div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 bg-gray-50 relative">
-                                4
-                                <div className="absolute top-8 left-1 right-1 bg-black text-white text-[10px] px-1 py-0.5 rounded truncate">class_class_1</div>
-                            </div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">5</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 relative">
-                                <span className="w-6 h-6 rounded-full bg-black text-white inline-flex items-center justify-center font-bold">6</span>
-                            </div>
-                            <div className="p-2 text-right text-sm text-gray-500">7</div>
-                        </div>
-                        <div className="grid grid-cols-7 border-b border-gray-100 min-h-[80px]">
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">8</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">9</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 bg-gray-50 relative">
-                                10
-                                <div className="absolute top-8 left-1 flex h-1.5 w-full bg-gray-200">
-                                    <div className="h-full bg-black w-2/3"></div>
-                                </div>
-                                <div className="absolute top-10 left-1 right-1 text-black text-[10px] text-center font-medium">class_class_2</div>
-                            </div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 bg-gray-50">11</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100 bg-gray-50">12</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">13</div>
-                            <div className="p-2 text-right text-sm text-gray-500">14</div>
-                        </div>
-                        <div className="grid grid-cols-7 border-b border-gray-100 min-h-[80px]">
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">15</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">16</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">17</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">18</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">19</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">20</div>
-                            <div className="p-2 text-right text-sm text-gray-500">21</div>
-                        </div>
-                        <div className="grid grid-cols-7 min-h-[80px]">
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">22</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">23</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">24</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">25</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">26</div>
-                            <div className="p-2 text-right text-sm text-gray-500 border-r border-gray-100">27</div>
-                            <div className="p-2 text-right text-sm text-gray-500">28</div>
+                        <div className="grid grid-cols-7 border-l border-gray-100">
+                            {calendarDays.map((dayNumber, index) => {
+                                const dayEvents = getEventsForDay(dayNumber);
+                                const isToday = dayNumber === currentDate.getDate();
+
+                                return (
+                                    <div key={`day-${index}`} className={`p-2 min-h-[100px] text-right text-sm text-gray-500 border-r border-b border-gray-100 relative ${dayEvents.length > 0 ? 'bg-indigo-50/10' : ''}`}>
+                                        {dayNumber ? (
+                                            <>
+                                                {isToday ? (
+                                                    <span className="w-7 h-7 rounded-full bg-black text-white inline-flex items-center justify-center font-bold mb-1">{dayNumber}</span>
+                                                ) : (
+                                                    <span className="inline-block w-7 h-7 text-center leading-7 font-medium mb-1">{dayNumber}</span>
+                                                )}
+
+                                                {dayEvents.length > 0 && (
+                                                    <div className="flex flex-col gap-1 mt-1 text-left">
+                                                        {dayEvents.map((evt, i) => {
+                                                            const isStart = evt.type === 'START';
+                                                            return (
+                                                                <div key={`${evt.id || i}-${evt.type}`} className={`text-white text-[10px] px-2 py-1 rounded shadow-sm truncate border ${isStart ? 'bg-emerald-600 border-emerald-700' : 'bg-rose-500 border-rose-600'}`} title={evt.job_title || evt.gig_title || 'Project'}>
+                                                                    <strong className="block text-[9px] uppercase tracking-wide opacity-80">
+                                                                        {isStart ? 'Starts' : 'Ends'}
+                                                                    </strong>
+                                                                    {evt.job_title || evt.gig_title || 'Project'}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="h-full w-full bg-gray-50/50"></div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -216,34 +239,6 @@ const Dashboard = () => {
 
             {/* Recommended Projects & Tutorial Container */}
             <div className="space-y-8 max-w-4xl mx-auto">
-                {/* Recommended Projects */}
-                <div>
-                    <h2 className="text-center font-serif font-bold text-lg text-gray-900 mb-6">Recommended Projects</h2>
-                    <div className="space-y-4">
-                        {recommendedProjects.map((project) => (
-                            <div key={project.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between group hover:border-black transition-colors">
-                                <div className="flex items-start gap-4">
-                                    <div className="h-8 w-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-600 mt-1">
-                                        C
-                                    </div>
-                                    <div>
-                                        <div className="text-xs text-gray-500 font-medium mb-1">{project.client}</div>
-                                        <div className="text-sm font-semibold text-gray-900">{project.title}</div>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button className="bg-black text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors shadow-sm">
-                                        Open
-                                    </button>
-                                    <button className="bg-white text-black border border-black text-xs font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                                        Save Project
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
                 {/* Tutorial Video Placeholder */}
                 <div>
                     <h2 className="text-center font-serif font-bold text-lg text-gray-900 mb-6">Tutorial</h2>

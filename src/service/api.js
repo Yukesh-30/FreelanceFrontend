@@ -18,6 +18,7 @@ const API_PATH = {
     },
     GIGS: {
         CREATE: `${BASE_URL}/api/gigs/create`,
+        GET_ALL: `${BASE_URL}/api/gigs/all`,
         GET_ALL_BY_FREELANCER: (id) => `${BASE_URL}/api/gigs/all-gigs/${id}`,
         GET_BY_ID: (id) => `${BASE_URL}/api/gigs/${id}`,
         DELETE: (id) => `${BASE_URL}/api/gigs/delete/${id}`,
@@ -38,6 +39,18 @@ const API_PATH = {
         GET_PROFILE: (id) => `${BASE_URL}/api/client/client-profile/${id}`,
         GET_MY_PROFILE: `${BASE_URL}/api/client/client-profile/me`,
         UPDATE_MY_PROFILE: `${BASE_URL}/api/client/client-profile/me`,
+    },
+    CONTRACT: {
+        APPLY_JOB: (id) => `${BASE_URL}/api/contract/${id}/apply`,
+        GET_APPLICATIONS_BY_JOB: (id) => `${BASE_URL}/api/contract/${id}/applications`,
+        UPDATE_APPLICATION_STATUS: (id) => `${BASE_URL}/api/contract/${id}/status`,
+        GET_MY_APPLICATIONS: (id) => `${BASE_URL}/api/contract/freelancer/${id}/applications`,
+        GET_MY_CONTRACTS: (id) => `${BASE_URL}/api/contract/freelancer/${id}/contracts`,
+        GET_MY_CONTRACTS_CLIENT: (id) => `${BASE_URL}/api/contract/client/${id}/contracts`,
+    },
+    ORDERS: {
+        GET_FREELANCER_ORDERS: `${BASE_URL}/api/orders/`,
+        UPDATE_ORDER_STATUS: (id) => `${BASE_URL}/api/orders/${id}`
     }
 }
 

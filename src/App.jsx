@@ -11,13 +11,20 @@ import ClientLayout from './components/layout/ClientLayout';
 import ClientDashboard from './pages/client/Dashboard';
 import CreateJob from './pages/client/CreateJob';
 import MyJobs from './pages/client/MyJobs';
+import JobApplications from './pages/client/JobApplications';
 import ClientProfile from './pages/client/ClientProfile';
+import SearchFreelancers from './pages/client/SearchFreelancers';
+import ClientGigDetails from './pages/client/ClientGigDetails';
 import FreelancerDashboard from './pages/freelancer/Dashboard';
 import FreelancerProfile from './pages/freelancer/Profile';
 import CreateGig from './pages/freelancer/CreateGig';
 import GigDetails from './pages/freelancer/GigDetails';
 import SearchProject from './pages/freelancer/SearchProject';
 import JobDetails from './pages/freelancer/JobDetails';
+import AppliedJobs from './pages/freelancer/AppliedJobs';
+import CurrentProjects from './pages/freelancer/CurrentProjects';
+import GigOrders from './pages/freelancer/GigOrders';
+import ClientCurrentProjects from './pages/client/ClientCurrentProjects';
 
 function App() {
   return (
@@ -39,7 +46,11 @@ function App() {
                     <Route path="dashboard" element={<ClientDashboard />} />
                     <Route path="jobs/create" element={<CreateJob />} />
                     <Route path="jobs" element={<MyJobs />} />
+                    <Route path="jobs/:id/applications" element={<JobApplications />} />
                     <Route path="profile" element={<ClientProfile />} />
+                    <Route path="search-freelancers" element={<SearchFreelancers />} />
+                    <Route path="gigs/:id" element={<ClientGigDetails />} />
+                    <Route path="current-projects" element={<ClientCurrentProjects />} />
                   </Routes>
                 </ClientLayout>
               </PrivateRoute>
@@ -59,6 +70,9 @@ function App() {
                     <Route path="gigs/:id" element={<GigDetails />} />
                     <Route path="search-project" element={<SearchProject />} />
                     <Route path="jobs/:id" element={<JobDetails />} />
+                    <Route path="applications" element={<AppliedJobs />} />
+                    <Route path="current-projects" element={<CurrentProjects />} />
+                    <Route path="orders" element={<GigOrders />} />
                   </Routes>
                 </FreelancerLayout>
               </PrivateRoute>

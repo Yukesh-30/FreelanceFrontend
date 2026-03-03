@@ -2,14 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
+import { useAuth } from '../../context/AuthContext';
 
 const JobDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [job, setJob] = useState(null);
     const [client, setClient] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [proposal, setProposal] = useState({
+        cover_letter: '',
+        proposed_budget: '',
+        estimated_days: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
 
     useEffect(() => {
         const fetchJobDetails = async () => {
@@ -44,6 +57,48 @@ const JobDetails = () => {
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading job details...</div>;
     if (error || !job) return <div className="p-8 text-center text-red-500">{error || "Job not found"}</div>;
+
+    const handleSubmitProposal = async (e) => {
+        e.preventDefault();
+        setSubmitError(null);
+        setIsSubmitting(true);
+
+        const freelancerId = user?.id || user?.userId || user?.sub;
+
+        if (!freelancerId) {
+            setSubmitError("Could not identify freelancer ID. Please log in again.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        const payload = {
+            freelancer_id: freelancerId,
+            cover_letter: proposal.cover_letter,
+            proposed_budget: parseFloat(proposal.proposed_budget),
+            estimated_days: parseInt(proposal.estimated_days, 10)
+        };
+
+        try {
+            await axiosInstance.post(API_PATH.CONTRACT.APPLY_JOB(id), payload);
+            setSubmitSuccess(true);
+            setTimeout(() => {
+                setIsModalOpen(false);
+                setSubmitSuccess(false);
+                setProposal({ cover_letter: '', proposed_budget: '', estimated_days: '' });
+            }, 2000);
+        } catch (err) {
+            console.error("Failed to submit proposal", err);
+
+            // Handle specific backend errors
+            if (err.response?.status === 500) {
+                setSubmitError("You have already submitted a proposal for this project.");
+            } else {
+                setSubmitError(err.response?.data?.message || "Failed to submit proposal. Please try again.");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const companyName = client?.company_name || 'Unknown Company';
     const rating = client?.rating ? `${client.rating} ★` : 'No rating yet';
@@ -117,12 +172,97 @@ const JobDetails = () => {
                             </div>
                         </div>
 
-                        <button className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-xl font-medium transition-colors shadow-sm">
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-xl font-medium transition-colors shadow-sm"
+                        >
                             Submit a Proposal
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Application Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold font-serif text-gray-900">Submit Proposal</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        {submitSuccess ? (
+                            <div className="p-4 bg-green-50 text-green-700 rounded-xl flex items-center gap-3">
+                                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                <span className="font-medium">Proposal submitted successfully!</span>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSubmitProposal} className="space-y-5">
+                                {submitError && (
+                                    <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+                                        {submitError}
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Cover Letter</label>
+                                    <textarea
+                                        required
+                                        rows={5}
+                                        value={proposal.cover_letter}
+                                        onChange={(e) => setProposal({ ...proposal, cover_letter: e.target.value })}
+                                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none"
+                                        placeholder="Introduce yourself and explain why you're a great fit for this job..."
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Proposed Budget ($)</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="1"
+                                            value={proposal.proposed_budget}
+                                            onChange={(e) => setProposal({ ...proposal, proposed_budget: e.target.value })}
+                                            className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                                            placeholder="e.g. 1500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Days</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="1"
+                                            value={proposal.estimated_days}
+                                            onChange={(e) => setProposal({ ...proposal, estimated_days: e.target.value })}
+                                            className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                                            placeholder="e.g. 14"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="pt-4 flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Submit Proposal'}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

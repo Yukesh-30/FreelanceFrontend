@@ -49,6 +49,7 @@ const FreelancerLayout = ({ children }) => {
         { name: 'Search Project', path: '/freelancer/search-project', icon: 'search' },
         { name: 'Profile', path: '/freelancer/profile', icon: 'profile' },
         { name: 'Create Gig', path: '/freelancer/gigs/create', icon: 'settings' }, // Using settings icon temporarily
+        { name: 'Gig Orders', path: '/freelancer/orders', icon: 'settings' }, // Using settings icon for now
         { name: 'Settings', path: '/freelancer/settings', icon: 'settings' }, // Placeholder for future
     ];
 

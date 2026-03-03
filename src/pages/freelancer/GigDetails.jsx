@@ -258,7 +258,14 @@ const GigDetails = () => {
                                     {gig.media && gig.media.map((item) => (
                                         <div key={item.id} className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative group">
                                             {item.type === 'IMAGE' ? (
-                                                <img src={item.url} alt="Gig media" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img
+                                                    src={item.url}
+                                                    alt="Gig media"
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                    }}
+                                                />
                                             ) : (
                                                 <video src={item.url} controls className="w-full h-full object-cover" />
                                             )}
