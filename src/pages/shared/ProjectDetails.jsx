@@ -236,7 +236,18 @@ const ProjectDetails = () => {
                                     )}
                                 </div>
 
-                                <button className="mt-6 w-full py-2.5 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors shadow-sm text-sm">
+                                <button
+                                    onClick={() => {
+                                        const base = isClient ? '/client' : '/freelancer';
+                                        navigate(`${base}/chat/${contract.id}`, {
+                                            state: {
+                                                contract,
+                                                otherPartyName: otherPartyInfo?.full_name || 'User'
+                                            }
+                                        });
+                                    }}
+                                    className="mt-6 w-full py-2.5 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors shadow-sm text-sm"
+                                >
                                     Send Message
                                 </button>
                             </div>

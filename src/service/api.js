@@ -51,6 +51,10 @@ const API_PATH = {
     ORDERS: {
         GET_FREELANCER_ORDERS: `${BASE_URL}/api/orders/`,
         UPDATE_ORDER_STATUS: (id) => `${BASE_URL}/api/orders/${id}`
+    },
+    CHAT: {
+        GET_CONVERSATIONS: `${BASE_URL}/api/chat/conversations`,
+        GET_MESSAGES: (contractId) => `${BASE_URL}/api/chat/${contractId}/messages`,
     }
 }
 
