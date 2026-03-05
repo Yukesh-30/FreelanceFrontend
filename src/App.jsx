@@ -25,6 +25,7 @@ import AppliedJobs from './pages/freelancer/AppliedJobs';
 import CurrentProjects from './pages/freelancer/CurrentProjects';
 import GigOrders from './pages/freelancer/GigOrders';
 import ClientCurrentProjects from './pages/client/ClientCurrentProjects';
+import ProjectDetails from './pages/shared/ProjectDetails';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
                     <Route path="search-freelancers" element={<SearchFreelancers />} />
                     <Route path="gigs/:id" element={<ClientGigDetails />} />
                     <Route path="current-projects" element={<ClientCurrentProjects />} />
+                    <Route path="projects/:id" element={<ProjectDetails />} />
                   </Routes>
                 </ClientLayout>
               </PrivateRoute>
@@ -73,6 +75,7 @@ function App() {
                     <Route path="applications" element={<AppliedJobs />} />
                     <Route path="current-projects" element={<CurrentProjects />} />
                     <Route path="orders" element={<GigOrders />} />
+                    <Route path="projects/:id" element={<ProjectDetails />} />
                   </Routes>
                 </FreelancerLayout>
               </PrivateRoute>

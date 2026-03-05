@@ -8,7 +8,13 @@ const CurrentProjects = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [contracts, setContracts] = useState([]);
+    const [client,setClient] = useState(null);
     const [loading, setLoading] = useState(true);
+
+
+    const handleViewDetails = (contract) => {
+        navigate(`/freelancer/projects/${contract.id}`, { state: { contract } });
+    };
 
     useEffect(() => {
         if (!user?.id) return;
@@ -24,8 +30,10 @@ const CurrentProjects = () => {
                 setLoading(false);
             }
         };
+        
 
         fetchContracts();
+        
     }, [user?.id]);
 
     if (loading) return <p className="p-8 text-gray-500">Loading your active projects...</p>;
@@ -66,7 +74,10 @@ const CurrentProjects = () => {
                             </div>
                             <div className="flex justify-between items-center mt-2 pt-4 border-t border-gray-100">
                                 <span className="font-serif font-bold text-lg text-gray-900">${contract.total_amount}</span>
-                                <button className="text-sm font-semibold text-black hover:text-indigo-600 transition-colors">
+                                <button
+                                    onClick={() => handleViewDetails(contract)}
+                                    className="text-sm font-semibold text-black hover:text-indigo-600 transition-colors"
+                                >
                                     View Details
                                 </button>
                             </div>

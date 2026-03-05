@@ -10,6 +10,10 @@ const ClientCurrentProjects = () => {
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const handleViewDetails = (contract) => {
+        navigate(`/client/projects/${contract.id}`, { state: { contract } });
+    };
+
     useEffect(() => {
         if (!user?.id) return;
 
@@ -107,8 +111,11 @@ const ClientCurrentProjects = () => {
 
                                 <div className="flex justify-between items-center mt-2 pt-4 border-t border-gray-100">
                                     <span className="font-serif font-bold text-lg text-gray-900">${contract.total_amount}</span>
-                                    <button className="text-sm font-semibold text-black hover:text-indigo-600 transition-colors">
-                                        View Track Info
+                                    <button
+                                        onClick={() => handleViewDetails(contract)}
+                                        className="text-sm font-semibold text-black hover:text-indigo-600 transition-colors"
+                                    >
+                                        View Details
                                     </button>
                                 </div>
                             </div>
