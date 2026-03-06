@@ -19,24 +19,24 @@ const SearchProject = () => {
                     jobsData = res.data;
                 }
 
-                const jobsWithClientInfo = await Promise.all(
-                    jobsData.map(async (job) => {
-                        let companyName = 'Unknown Company';
-                        if (job.client_id) {
-                            try {
-                                const clientRes = await axiosInstance.get(API_PATH.CLIENT.GET_PROFILE(job.client_id));
-                                if (clientRes.data && clientRes.data.company_name) {
-                                    companyName = clientRes.data.company_name;
-                                }
-                            } catch (error) {
-                                console.warn(`Could not fetch client info for ${job.client_id}`, error);
-                            }
-                        }
-                        return { ...job, companyName };
-                    })
-                );
+                // const jobsWithClientInfo = await Promise.all(
+                //     jobsData.map(async (job) => {
+                //         let companyName = 'Unknown Company';
+                //         if (job.client_id) {
+                //             try {
+                //                 const clientRes = await axiosInstance.get(API_PATH.CLIENT.GET_PROFILE(job.client_id));
+                //                 if (clientRes.data && clientRes.data.company_name) {
+                //                     companyName = clientRes.data.company_name;
+                //                 }
+                //             } catch (error) {
+                //                 console.warn(`Could not fetch client info for ${job.client_id}`, error);
+                //             }
+                //         }
+                //         return { ...job, companyName };
+                //     })
+                // );
 
-                setJobs(jobsWithClientInfo);
+                setJobs(jobsData);
             } catch (err) {
                 console.error("Failed to fetch jobs.", err);
             } finally {
@@ -113,13 +113,8 @@ const SearchProject = () => {
                             filteredJobs.map(job => (
                                 <div key={job.id} className="bg-white border text-sm border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500 uppercase flex-shrink-0 border border-gray-300">
-                                            {job.companyName?.charAt(0) || 'U'}
-                                        </div>
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-0.5">{job.companyName}</p>
                                             <h3 className="font-semibold text-gray-900 line-clamp-1">{job.title || job.description}</h3>
-                                            {job.category && <p className="text-xs text-gray-400 mt-0.5">{job.category}</p>}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 sm:ml-4 flex-shrink-0 mt-3 sm:mt-0">
