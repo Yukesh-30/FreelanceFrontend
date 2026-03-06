@@ -79,7 +79,25 @@ const ChatPage = () => {
                 }
                 setUserNamesMap(namesMap);
 
-                setConversations(convRes.data?.conversations || []);
+                const rawConvs = convRes.data?.conversations || [];
+
+                // Deduplicate conversations by participants so we only show one chat per user pair
+                // (Older DB records might have multiple convos from before the single chat room change)
+                const uniqueConvsMap = new Map();
+                rawConvs.forEach(conv => {
+                    if (conv.participants && conv.participants.length >= 2) {
+                        // Create a unique key by sorting participants
+                        const key = [...conv.participants].sort().join(',');
+                        if (!uniqueConvsMap.has(key)) {
+                            uniqueConvsMap.set(key, conv);
+                        }
+                    } else {
+                        // Fallback if participants array is missing or invalid
+                        uniqueConvsMap.set(conv._id.toString(), conv);
+                    }
+                });
+
+                setConversations(Array.from(uniqueConvsMap.values()));
             } catch (err) {
                 console.error('Failed to load chat data:', err);
             } finally {
@@ -261,7 +279,7 @@ const ChatPage = () => {
                                                 {getOtherPartyName(conv.contract_id)}
                                             </p>
                                             <p className="text-xs text-gray-400 mt-0.5">
-                                                {getContractTitle(conv.contract_id)}
+                                                All Projects
                                             </p>
                                         </div>
                                     </div>
@@ -287,7 +305,7 @@ const ChatPage = () => {
                                 <h3 className="text-sm font-bold text-gray-900">
                                     {passedOtherParty || getOtherPartyName(activeContractId)}
                                 </h3>
-                                <p className="text-xs text-gray-500">{getContractTitle(activeContractId)}</p>
+                                <p className="text-xs text-gray-500">All Projects</p>
                             </div>
                             <div className="ml-auto flex items-center gap-2">
                                 <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100">
