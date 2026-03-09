@@ -7,27 +7,40 @@ const SearchFreelancers = () => {
     const [gigs, setGigs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(12);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    const fetchGigs = async (page = 1) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await axiosInstance.get(API_PATH.GIGS.GET_ALL, {
+                params: {
+                    page,
+                    limit
+                }
+            });
+            if (res.data?.gigs) {
+                setGigs(res.data.gigs);
+                setTotal(res.data.total || 0);
+                setTotalPages(res.data.totalPages || 1);
+                setCurrentPage(res.data.page || page);
+            } else {
+                setGigs([]);
+            }
+        } catch (err) {
+            console.error("Failed to fetch gigs", err);
+            setError("Failed to load gigs. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchGigs = async () => {
-            try {
-                setLoading(true);
-                const res = await axiosInstance.get(API_PATH.GIGS.GET_ALL);
-                if (res.data?.gigs) {
-                    setGigs(res.data.gigs);
-                } else {
-                    setGigs([]);
-                }
-            } catch (err) {
-                console.error("Failed to fetch gigs", err);
-                setError("Failed to load gigs. Please try again later.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchGigs();
-    }, []);
+        fetchGigs(currentPage);
+    }, [currentPage, limit]);
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -64,7 +77,7 @@ const SearchFreelancers = () => {
             <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold font-serif text-gray-900">All Available Services</h2>
-                    <span className="text-sm text-gray-500 font-medium">{gigs.length} Gigs found</span>
+                    <span className="text-sm text-gray-500 font-medium">{gigs.length} of {total} Gigs shown</span>
                 </div>
 
                 {loading ? (
@@ -129,6 +142,60 @@ const SearchFreelancers = () => {
                                 </Link>
                             );
                         })}
+                    </div>
+                )}
+
+                {/* Pagination Controls */}
+                {!loading && gigs.length > 0 && (
+                    <div className="mt-8 flex items-center justify-between border-t border-gray-200 pt-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                                Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span>
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors font-medium"
+                            >
+                                Previous
+                            </button>
+                            <div className="flex items-center gap-2">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum;
+                                    if (totalPages <= 5) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage <= 3) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage >= totalPages - 2) {
+                                        pageNum = totalPages - 4 + i;
+                                    } else {
+                                        pageNum = currentPage - 2 + i;
+                                    }
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                                                currentPage === pageNum
+                                                    ? 'bg-black text-white'
+                                                    : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors font-medium"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

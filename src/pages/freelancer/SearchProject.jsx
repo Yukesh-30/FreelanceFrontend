@@ -7,44 +7,40 @@ const SearchProject = () => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(15);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    const fetchJobs = async (page = 1) => {
+        try {
+            setLoading(true);
+            const res = await axiosInstance.get(API_PATH.JOBS.GET_ALL_JOBS, {
+                params: {
+                    page,
+                    limit
+                }
+            });
+            
+            if (res.data && res.data.jobs) {
+                setJobs(res.data.jobs);
+                setTotal(res.data.total || 0);
+                setTotalPages(res.data.totalPages || 1);
+                setCurrentPage(res.data.page || page);
+            } else if (Array.isArray(res.data)) {
+                setJobs(res.data);
+                setCurrentPage(page);
+            }
+        } catch (err) {
+            console.error("Failed to fetch jobs.", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchJobs = async () => {
-            try {
-                const res = await axiosInstance.get(API_PATH.JOBS.GET_ALL_JOBS);
-                let jobsData = [];
-                if (res.data && res.data.jobs) {
-                    jobsData = res.data.jobs;
-                } else if (Array.isArray(res.data)) {
-                    jobsData = res.data;
-                }
-
-                // const jobsWithClientInfo = await Promise.all(
-                //     jobsData.map(async (job) => {
-                //         let companyName = 'Unknown Company';
-                //         if (job.client_id) {
-                //             try {
-                //                 const clientRes = await axiosInstance.get(API_PATH.CLIENT.GET_PROFILE(job.client_id));
-                //                 if (clientRes.data && clientRes.data.company_name) {
-                //                     companyName = clientRes.data.company_name;
-                //                 }
-                //             } catch (error) {
-                //                 console.warn(`Could not fetch client info for ${job.client_id}`, error);
-                //             }
-                //         }
-                //         return { ...job, companyName };
-                //     })
-                // );
-
-                setJobs(jobsData);
-            } catch (err) {
-                console.error("Failed to fetch jobs.", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchJobs();
-    }, []);
+        fetchJobs(currentPage);
+    }, [currentPage, limit]);
 
     const filteredJobs = jobs.filter(job => {
         const searchLower = searchTerm.toLowerCase();
@@ -89,7 +85,7 @@ const SearchProject = () => {
             <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold font-serif text-gray-900">All Available Projects</h2>
-                    <span className="text-sm text-gray-500 font-medium">{filteredJobs.length} Projects found</span>
+                    <span className="text-sm text-gray-500 font-medium">{filteredJobs.length} of {total} Projects</span>
                 </div>
 
                 {loading ? (
@@ -125,6 +121,60 @@ const SearchProject = () => {
                                 </div>
                             ))
                         )}
+                    </div>
+                )}
+
+                {/* Pagination Controls */}
+                {!loading && filteredJobs.length > 0 && (
+                    <div className="mt-8 flex items-center justify-between border-t border-gray-200 pt-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                                Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span>
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors font-medium"
+                            >
+                                Previous
+                            </button>
+                            <div className="flex items-center gap-2">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum;
+                                    if (totalPages <= 5) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage <= 3) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage >= totalPages - 2) {
+                                        pageNum = totalPages - 4 + i;
+                                    } else {
+                                        pageNum = currentPage - 2 + i;
+                                    }
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                                                currentPage === pageNum
+                                                    ? 'bg-black text-white'
+                                                    : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors font-medium"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
