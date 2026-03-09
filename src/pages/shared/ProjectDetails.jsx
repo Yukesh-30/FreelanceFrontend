@@ -3,6 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
+import SubmissionsList from '../../components/shared/SubmissionsList';
+import SubmitWorkModal from '../../components/shared/SubmitWorkModal';
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -16,6 +18,14 @@ const ProjectDetails = () => {
     const [error, setError] = useState(null);
     const isClient = user?.id === contract?.client_id;
     const isFreelancer = user?.id === contract?.freelancer_id;
+
+    const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+    const [refreshSubmissions, setRefreshSubmissions] = useState(0);
+    const [hasApprovedSubmission, setHasApprovedSubmission] = useState(false);
+
+    const handleSubmissionSuccess = () => {
+        setRefreshSubmissions(prev => prev + 1);
+    };
 
     useEffect(() => {
         if (!contract) {
@@ -162,6 +172,33 @@ const ProjectDetails = () => {
                             </div>
                         </div>
                     </section>
+
+                    {/* Submissions Section */}
+                    <section>
+                        <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Submissions</h3>
+                            {isFreelancer && (
+                                <button
+                                    onClick={() => setIsSubmitModalOpen(true)}
+                                    disabled={hasApprovedSubmission}
+                                    title={hasApprovedSubmission ? "Work has already been approved" : "Submit new work"}
+                                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm ${hasApprovedSubmission
+                                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                            : 'text-white bg-black hover:bg-gray-800'
+                                        }`}
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                                    Submit Work
+                                </button>
+                            )}
+                        </div>
+                        <SubmissionsList
+                            contractId={contract.id}
+                            isClient={isClient}
+                            refreshTrigger={refreshSubmissions}
+                            onSubmissionsLoaded={setHasApprovedSubmission}
+                        />
+                    </section>
                 </div>
 
                 {/* Right Column: User Profile */}
@@ -255,6 +292,15 @@ const ProjectDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {isFreelancer && (
+                <SubmitWorkModal
+                    isOpen={isSubmitModalOpen}
+                    onClose={() => setIsSubmitModalOpen(false)}
+                    contractId={contract.id}
+                    onSuccess={handleSubmissionSuccess}
+                />
+            )}
         </div>
     );
 };

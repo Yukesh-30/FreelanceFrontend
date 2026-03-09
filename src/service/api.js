@@ -55,6 +55,12 @@ const API_PATH = {
     CHAT: {
         GET_CONVERSATIONS: `${BASE_URL}/api/chat/conversations`,
         GET_MESSAGES: (contractId) => `${BASE_URL}/api/chat/${contractId}/messages`,
+    },
+    SUBMISSION: {
+        SUBMIT_WORK: (contractId) => `${BASE_URL}/api/submission/${contractId}/submit`,
+        GET_SUBMISSIONS: (contractId) => `${BASE_URL}/api/submission/${contractId}/submission`,
+        UPDATE_STATUS: (id) => `${BASE_URL}/api/submission/${id}`,
+        GET_SINGLE: (id) => `${BASE_URL}/api/submission/single/${id}`
     }
 }
 
