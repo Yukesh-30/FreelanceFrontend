@@ -3,7 +3,7 @@ import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
 import UpdateSubmissionStatusModal from './UpdateSubmissionStatusModal';
 
-const SubmissionsList = ({ contractId, isClient, refreshTrigger, onSubmissionsLoaded }) => {
+const SubmissionsList = ({ contractId, isClient, refreshTrigger, onSubmissionsLoaded, paymentStatus }) => {
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -171,6 +171,7 @@ const SubmissionsList = ({ contractId, isClient, refreshTrigger, onSubmissionsLo
                     onClose={() => setSelectedSubmission(null)}
                     submissionId={selectedSubmission.submission_id || selectedSubmission.id}
                     currentStatus={selectedSubmission.status}
+                    paymentStatus={paymentStatus}
                     onSuccess={() => {
                         fetchSubmissions();
                         setSelectedSubmission(null);

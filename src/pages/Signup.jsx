@@ -25,6 +25,8 @@ const Signup = () => {
                     fullName
                 }
             );
+            
+            console.log(response.data);
         
         } catch (error) {
             console.log(error);

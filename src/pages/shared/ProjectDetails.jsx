@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
 import SubmissionsList from '../../components/shared/SubmissionsList';
 import SubmitWorkModal from '../../components/shared/SubmitWorkModal';
+import StripePaymentModal from '../../components/shared/StripePaymentModal';
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -23,6 +24,38 @@ const ProjectDetails = () => {
     const [refreshSubmissions, setRefreshSubmissions] = useState(0);
     const [hasApprovedSubmission, setHasApprovedSubmission] = useState(false);
 
+    // Payment state (client only)
+    const [paymentStatus, setPaymentStatus] = useState(null); // { status, amount, releasedAt }
+    const [isStripeModalOpen, setIsStripeModalOpen] = useState(false);
+    const [isReleasingFunds, setIsReleasingFunds] = useState(false);
+    const [paymentError, setPaymentError] = useState('');
+
+    const fetchPaymentStatus = useCallback(async () => {
+        if (!contract?.id) return;
+        try {
+            const res = await axiosInstance.get(API_PATH.PAYMENTS.GET_STATUS(contract.id));
+            setPaymentStatus(res.data);
+        } catch (err) {
+            // Contract may not have a payment yet — treat as unfunded
+            if (err.response?.status === 404) {
+                setPaymentStatus(null);
+            }
+        }
+    }, [contract?.id]);
+
+    const handleReleaseFunds = async () => {
+        setIsReleasingFunds(true);
+        setPaymentError('');
+        try {
+            await axiosInstance.post(API_PATH.PAYMENTS.PAY_RELEASE(contract.id));
+            await fetchPaymentStatus();
+        } catch (err) {
+            setPaymentError(err.response?.data?.message || 'Failed to release funds. Please try again.');
+        } finally {
+            setIsReleasingFunds(false);
+        }
+    };
+
     const handleSubmissionSuccess = () => {
         setRefreshSubmissions(prev => prev + 1);
     };
@@ -38,11 +71,16 @@ const ProjectDetails = () => {
             try {
                 setLoading(true);
                 if (isClient) {
+
+                    console.log(contract.freelancer_id)
                     // Fetch freelancer profile
                     const [freelancerResponse, userResponse] = await Promise.all([
                         axiosInstance.get(API_PATH.FREELANCER.GET_DETAILS(contract.freelancer_id)),
                         axiosInstance.get(API_PATH.USERS.GET_USER(contract.freelancer_id))
                     ]);
+
+                    console.log(freelancerResponse.data)
+                    console.log(userResponse.data)
 
                     setOtherPartyInfo({
                         ...userResponse.data.infomations,
@@ -73,6 +111,7 @@ const ProjectDetails = () => {
         };
 
         fetchOtherPartyProfile();
+        if (isClient) fetchPaymentStatus();
     }, [contract, isClient, isFreelancer]);
 
     const daysRemaining = (endDateStr) => {
@@ -183,8 +222,8 @@ const ProjectDetails = () => {
                                     disabled={hasApprovedSubmission}
                                     title={hasApprovedSubmission ? "Work has already been approved" : "Submit new work"}
                                     className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm ${hasApprovedSubmission
-                                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                            : 'text-white bg-black hover:bg-gray-800'
+                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                        : 'text-white bg-black hover:bg-gray-800'
                                         }`}
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
@@ -197,12 +236,94 @@ const ProjectDetails = () => {
                             isClient={isClient}
                             refreshTrigger={refreshSubmissions}
                             onSubmissionsLoaded={setHasApprovedSubmission}
+                            paymentStatus={paymentStatus?.status}
                         />
                     </section>
                 </div>
 
-                {/* Right Column: User Profile */}
+                {/* Right Column: Escrow + User Profile */}
                 <div className="space-y-6">
+
+                    {/* Escrow Status Card — client only */}
+                    {isClient && (
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Escrow</h3>
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+                                {paymentError && (
+                                    <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-100">
+                                        {paymentError}
+                                    </div>
+                                )}
+
+                                {/* NOT FUNDED */}
+                                {(!paymentStatus || paymentStatus.status === 'NOT_FUNDED' || paymentStatus.status === 'PENDING') && (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                Not Funded
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">Fund the escrow to secure payment for this contract. Funds are released only when you approve the work.</p>
+                                        <button
+                                            onClick={() => setIsStripeModalOpen(true)}
+                                            className="w-full py-2.5 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors text-sm shadow-sm flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                            Fund Escrow
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* HELD */}
+                                {paymentStatus?.status === 'HELD' && (
+                                    <>
+                                        <div className="flex items-center justify-between">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                                Held in Escrow
+                                            </span>
+                                            <span className="text-lg font-bold font-serif text-gray-900">${paymentStatus.amount}</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                            {hasApprovedSubmission
+                                                ? 'A submission has been approved. You can now release the funds to the freelancer.'
+                                                : 'Funds will be released once you approve a submission.'}
+                                        </p>
+                                        <button
+                                            onClick={handleReleaseFunds}
+                                            disabled={!hasApprovedSubmission || isReleasingFunds}
+                                            title={!hasApprovedSubmission ? 'Approve a submission first' : 'Release funds to freelancer'}
+                                            className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors text-sm shadow-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            {isReleasingFunds ? (
+                                                <><div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />Releasing...</>
+                                            ) : (
+                                                <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Release Funds</>
+                                            )}
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* RELEASED */}
+                                {paymentStatus?.status === 'RELEASED' && (
+                                    <>
+                                        <div className="flex items-center justify-between">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                Released
+                                            </span>
+                                            <span className="text-lg font-bold font-serif text-gray-900">${paymentStatus.amount}</span>
+                                        </div>
+                                        {paymentStatus.releasedAt && (
+                                            <p className="text-xs text-gray-400">Released on {new Date(paymentStatus.releasedAt).toLocaleDateString()}</p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">{roleName} Profile</h3>
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 relative overflow-hidden group hover:border-black transition-colors">
                         {loading ? (
@@ -299,6 +420,19 @@ const ProjectDetails = () => {
                     onClose={() => setIsSubmitModalOpen(false)}
                     contractId={contract.id}
                     onSuccess={handleSubmissionSuccess}
+                />
+            )}
+
+            {isClient && (
+                <StripePaymentModal
+                    isOpen={isStripeModalOpen}
+                    onClose={() => setIsStripeModalOpen(false)}
+                    contractId={contract.id}
+                    amount={contract.total_amount}
+                    onSuccess={() => {
+                        setIsStripeModalOpen(false);
+                        fetchPaymentStatus();
+                    }}
                 />
             )}
         </div>

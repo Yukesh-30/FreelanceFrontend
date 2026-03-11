@@ -61,6 +61,11 @@ const API_PATH = {
         GET_SUBMISSIONS: (contractId) => `${BASE_URL}/api/submission/${contractId}/submission`,
         UPDATE_STATUS: (id) => `${BASE_URL}/api/submission/${id}`,
         GET_SINGLE: (id) => `${BASE_URL}/api/submission/single/${id}`
+    },
+    PAYMENTS: {
+        FUND_CONTRACT: (contractId) => `${BASE_URL}/api/payments/${contractId}/fund`,
+        GET_STATUS: (contractId) => `${BASE_URL}/api/payments/${contractId}/status`,
+        PAY_RELEASE: (contractId) => `${BASE_URL}/api/payments/${contractId}/release`,
     }
 }
 

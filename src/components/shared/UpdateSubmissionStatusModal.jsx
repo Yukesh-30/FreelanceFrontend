@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { axiosInstance } from '../../service/axiosInstance';
 import { API_PATH } from '../../service/api';
 
-const UpdateSubmissionStatusModal = ({ isOpen, onClose, submissionId, currentStatus, onSuccess }) => {
+const UpdateSubmissionStatusModal = ({ isOpen, onClose, submissionId, currentStatus, paymentStatus, onSuccess }) => {
     const [status, setStatus] = useState(currentStatus || 'PENDING_REVIEW');
     const [feedback, setFeedback] = useState('');
     const [loading, setLoading] = useState(false);
@@ -44,6 +44,21 @@ const UpdateSubmissionStatusModal = ({ isOpen, onClose, submissionId, currentSta
                     {error && (
                         <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
                             {error}
+                        </div>
+                    )}
+
+                    {/* Escrow warning — shown when approving but escrow not funded */}
+                    {status === 'APPROVED' && paymentStatus !== 'HELD' && paymentStatus !== 'RELEASED' && (
+                        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                            <div>
+                                <p className="text-sm font-bold text-amber-800">Escrow not funded</p>
+                                <p className="text-xs text-amber-700 mt-0.5">
+                                    You haven't funded the escrow yet. Approving this submission without payment means the freelancer <span className="font-bold">will not be paid</span>. Go back to the project page and fund the escrow first.
+                                </p>
+                            </div>
                         </div>
                     )}
 
